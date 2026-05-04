@@ -23,10 +23,13 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 
 ## What you get
 
-### 22 skills
+### 25 skills
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
+| **Design gates** | `using-godot-superpowers` | Auto-loaded dispatcher: enforces design-before-code rule |
+|  | `game-brainstorming` | Idea → approved GDD via structured Q&A (hard-gates implementation) |
+|  | `writing-game-plan` | Approved GDD → approved milestone plan (hard-gates implementation) |
 | **Foundation** | `bootstrap-godot-project` | Scaffold full directory layout + base autoloads |
 |  | `godot-patterns` | Godot 4.x reference (auto-loaded on `.gd`/`.tscn`) |
 |  | `setup-collision-layers` | Configure 2D/3D physics layer names |

@@ -14,7 +14,7 @@ Targets **Godot 4.3+**. All technical content tracks the official [Godot docs](h
 .
 ├── .claude-plugin/plugin.json    # plugin manifest (links skills/, agents/, hooks/, .mcp.json)
 ├── agents/                       # 11 subagents
-├── skills/                       # 22 skills (each <name>/SKILL.md)
+├── skills/                       # 25 skills (each <name>/SKILL.md)
 ├── hooks/hooks.json              # extracted hooks for plugin packaging (mirror of settings.json's `hooks` block)
 ├── .mcp.json                     # recommended MCP servers
 ├── settings.json                 # default permissions + hooks (source of truth for hooks)
@@ -75,9 +75,14 @@ cp -R agents skills hooks settings.json settings.local.json .mcp.json /path/to/g
 
 Do not bypass these hooks (no `--no-verify`, no skipping format) without user request.
 
-## Skill catalog (22)
+## Skill catalog (25)
 
-**Foundation** (run early in a project's life):
+**Design gates** (auto-loaded; precede everything else):
+- `using-godot-superpowers` — auto-loaded dispatcher (`paths: ["**/*.gd", ...]`); enforces design-before-code rule
+- `game-brainstorming` — idea → approved GDD via structured Q&A; hard-gates implementation skills
+- `writing-game-plan` — approved GDD → approved milestone plan; hard-gates implementation skills
+
+**Foundation** (run early in a project's life, AFTER plan approved):
 - `bootstrap-godot-project` — full directory + autoload scaffold
 - `godot-patterns` — Godot 4.x reference (auto-loads on `.gd`/`.tscn`)
 - `setup-collision-layers` — 11-layer scheme for 2D + 3D physics
