@@ -18,7 +18,7 @@ for f in .claude-plugin/plugin.json hooks/hooks.json settings.json settings.loca
 done
 
 echo "== Hooks parity (settings.json ↔ hooks/hooks.json) =="
-if diff <(jq -S '.hooks' settings.json) <(jq -S '.' hooks/hooks.json) >/dev/null; then
+if diff <(jq -S '{hooks: .hooks}' settings.json) <(jq -S '.' hooks/hooks.json) >/dev/null; then
     echo "  OK  in sync"
 else
     echo "  FAIL drift detected. Run scripts/sync-hooks.sh"

@@ -5,5 +5,5 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-jq '.hooks' settings.json > hooks/hooks.json
+jq '{hooks: .hooks}' settings.json > hooks/hooks.json
 echo "synced hooks/hooks.json from settings.json"
