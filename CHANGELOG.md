@@ -3,6 +3,15 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.2.0] — 2026-05-04
+
+### Added
+- "Authoritative source" callout at the top of every skill (24) and every agent (11), instructing Claude / contributors to verify Godot 4.x APIs against the `godot-docs` MCP server before emitting code or examples. The dispatcher (`using-godot-superpowers`) carries the full rule with rationale.
+- New CLAUDE.md editing rule documenting the callout convention so the rule is enforced in future skills.
+
+### Why
+- Pre-trained model knowledge of Godot drifts version by version (renamed methods, flipped argument orders, deprecated nodes). Pinning every skill to the live `godot-docs` MCP keeps generated code aligned with the user's installed Godot.
+
 ## [1.1.0] — 2026-05-04
 
 ### Added

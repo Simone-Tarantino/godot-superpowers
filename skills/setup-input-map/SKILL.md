@@ -5,6 +5,8 @@ allowed-tools: Read, Write, Edit
 argument-hint: [genre: platformer | topdown | 3d-action | fps | turnbased]
 ---
 
+> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
+
 # Setup Input Map
 
 Configures Godot 4.x [InputMap](https://docs.godotengine.org/en/stable/tutorials/inputs/inputevent.html) actions and provides a remap UI scaffold.

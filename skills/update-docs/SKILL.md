@@ -5,6 +5,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: [all | progress | gdd | claude-md | readme | check]
 ---
 
+> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
+
 # Update Project Docs
 
 Keeps the four standard project docs in sync. Only touches the ones that exist — does not force a project to adopt all four.

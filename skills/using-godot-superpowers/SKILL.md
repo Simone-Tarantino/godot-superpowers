@@ -8,7 +8,22 @@ paths: ["**/*.gd", "**/*.tscn", "**/*.tres", "**/*.gdshader", "project.godot", "
 
 This file loads automatically whenever Claude touches a Godot project (matched via `paths` above). Read it first.
 
-## The rule
+## The other rule (applies always, even when the design gate is cleared)
+
+> **Verify every API against `godot-docs` MCP before emitting code.** No exceptions.
+
+The `godot-docs` MCP server is the only authoritative source for class names, method signatures, signal payloads, default values, and Godot 4.x feature availability. Pre-trained model knowledge of Godot drifts version by version: methods are renamed (`instance()` → `instantiate()`), arguments change (`ResourceSaver.save` flipped its args), nodes are deprecated (`TileMap` → `TileMapLayer` 4.3+), and signal signatures change.
+
+For any code you are about to emit, especially when called from another skill:
+
+1. Query `godot-docs` MCP for the class / method / signal you intend to use.
+2. Match the user's installed Godot version (read `config/features` in `project.godot`, or fall back to `godot --version`).
+3. Quote the method signature back in the response or as a comment so the user can verify.
+4. If `godot-docs` MCP is unavailable in this session, say so explicitly and link to the equivalent stable URL on `https://docs.godotengine.org/en/stable/`. Do not silently fall back to memory.
+
+When `context7` is available it is a useful secondary source for ecosystem libraries (gdtoolkit, GUT, GdUnit4, Phantom Camera, Dialogic, Beehave, LimboAI), but `godot-docs` MCP wins for engine APIs.
+
+## The design rule
 
 > Design before code. Always. For every project, regardless of size.
 

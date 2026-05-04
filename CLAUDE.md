@@ -31,6 +31,7 @@ When editing skills or agents in this directory:
 
 - **Skill bodies are end-user docs.** Be concrete: full code blocks, exact file paths, no abstract handwaving.
 - **Cite the official Godot doc URL** when explaining a non-obvious technical claim.
+- **Every skill that emits code must remind the user / Claude to verify the API via the `godot-docs` MCP before shipping the snippet.** Use the standard "Authoritative source" callout (one short blockquote near the top of the skill body) so the rule is visible inline, not buried in a footnote. The dispatcher (`using-godot-superpowers`) restates the same rule globally — keep them consistent.
 - **Frontmatter `description` is the discovery hook** — first sentence must contain the keywords a user would naturally use ("scaffold a player scene", "fix Godot 3 to 4 syntax", "configure collision layers").
 - **Keep skills self-contained.** Cross-references between skills are fine, but a skill should be useful read in isolation.
 - **English only.** Italian / other languages live in language packs (separate plugins).

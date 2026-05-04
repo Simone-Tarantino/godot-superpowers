@@ -4,6 +4,8 @@ description: Set up a Resource-based save/load system for Godot 4.x — SaveMana
 allowed-tools: Read, Write, Edit
 ---
 
+> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
+
 # Setup Save System
 
 Resource-backed save system. Survives reboots, handles typed data (Vector2, Color, Resources, custom classes), and uses a **group + method** convention so each persistable node owns its own serialization.

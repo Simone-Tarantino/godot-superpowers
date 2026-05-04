@@ -5,6 +5,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: <comma-separated-locales>
 ---
 
+> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
+
 # Setup Localization
 
 Wires the full i18n pipeline in Godot 4.x: CSV-based translations (best for short UI strings), optional `.po`/`gettext` for long-form text, runtime language switcher, locale persistence in `user://settings.cfg`, and font fallback for scripts the default font does not cover.
