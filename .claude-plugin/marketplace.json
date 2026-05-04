@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "godot-superpowers",
+  "description": "Single-plugin marketplace for godot-superpowers — full-spectrum Godot 4.x game development plugin for Claude Code.",
+  "owner": {
+    "name": "Simone Tarantino",
+    "url": "https://github.com/Simone-Tarantino"
+  },
+  "plugins": [
+    {
+      "name": "godot-superpowers",
+      "source": "./",
+      "description": "22 skills, 11 subagents, hooks (gdformat / gdlint / .tscn validation), MCP integration. Covers scaffolding, components, state machines, save systems, GUT tests, shaders, audio, export pipelines, and genre packs (platformer, top-down, 3D action, turn-based).",
+      "version": "1.0.0",
+      "author": {
+        "name": "Simone Tarantino"
+      },
+      "keywords": ["godot", "godot4", "gdscript", "gamedev", "game-development"],
+      "category": "development"
+    }
+  ]
+}
