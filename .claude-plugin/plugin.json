@@ -1,0 +1,16 @@
+{
+  "name": "godot-superpowers",
+  "description": "Full-spectrum Godot 4.x game development toolkit for Claude Code: skills, subagents, hooks, and MCP integration covering scaffolding, components, state machines, save systems, collision layers, GUT tests, shaders, audio, export pipelines, and genre packs (platformer, top-down, 3D action, turn-based).",
+  "version": "1.0.0",
+  "author": {
+    "name": "godot-superpowers contributors"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Simone-Tarantino/godot-superpowers",
+  "repository": "https://github.com/Simone-Tarantino/godot-superpowers",
+  "keywords": ["godot", "godot4", "gdscript", "gamedev", "game-development"],
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}

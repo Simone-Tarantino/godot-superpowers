@@ -1,0 +1,13 @@
+# Per-user MCP enables (see CLAUDE.md "Distribution" section)
+settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

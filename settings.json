@@ -1,0 +1,142 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(godot *)",
+      "Bash(gdformat *)",
+      "Bash(gdlint *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(pipx install gdtoolkit*)",
+      "Bash(pip install gdtoolkit*)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(find *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(ls *)",
+      "Bash(tree *)",
+      "Bash(diff *)",
+      "Bash(jq *)",
+      "Bash(chmod +x *)",
+      "Bash(chmod 755 *)",
+      "Bash(chmod 644 *)",
+      "Bash(zip *)",
+      "Bash(unzip *)",
+      "Bash(tar *)",
+      "Bash(zipalign *)",
+      "Bash(apksigner *)",
+      "Bash(signtool *)",
+      "Bash(codesign *)",
+      "Bash(productbuild *)",
+      "Bash(productsign *)",
+      "Bash(xcrun *)",
+      "Bash(notarytool *)",
+      "Bash(hdiutil *)",
+      "Bash(magick *)",
+      "Bash(convert *)",
+      "Bash(iconutil *)",
+      "Bash(sips *)",
+      "Bash(keytool *)",
+      "Bash(xattr *)",
+      "Bash(rm -rf addons/*/.git)",
+      "Bash(rm -rf addons/*/.git/)",
+      "Read(**/*.gd)",
+      "Read(**/*.gdshader)",
+      "Read(**/*.tscn)",
+      "Read(**/*.tres)",
+      "Read(**/*.gdextension)",
+      "Read(**/*.md)",
+      "Read(**/*.json)",
+      "Read(**/*.cfg)",
+      "Read(**/*.gutconfig.json)",
+      "Read(**/*.toml)",
+      "Read(**/*.yml)",
+      "Read(**/*.yaml)",
+      "Read(**/.gitignore)",
+      "Read(**/.gdignore)",
+      "Read(project.godot)",
+      "Read(default_bus_layout.tres)",
+      "Read(export_presets.cfg)"
+    ],
+    "deny": [
+      "Read(.godot/)",
+      "Read(.godot/**)",
+      "Write(.godot/)",
+      "Write(.godot/**)",
+      "Read(.import/)",
+      "Read(.import/**)",
+      "Read(builds/)",
+      "Read(builds/**)",
+      "Read(exports/)",
+      "Read(exports/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(android/)",
+      "Read(android/**)",
+      "Read(*.keystore)",
+      "Read(*.cer)",
+      "Read(*.p12)",
+      "Read(*.mobileprovision)",
+      "Read(*.remap)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~/*)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep '\\.gd$'); if [ -n \"$files\" ]; then for f in $files; do if [ -f \"$f\" ]; then gdformat \"$f\" 2>/dev/null && echo \"formatted: $f\" || echo \"format skipped: $f\"; fi; done; fi"
+          },
+          {
+            "type": "command",
+            "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep '\\.tscn$'); if [ -n \"$files\" ] && command -v godot >/dev/null 2>&1; then for f in $files; do godot --headless --check-only --path \"$CLAUDE_PROJECT_DIR\" \"$f\" 2>&1 | head -5 || true; done; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && for d in scripts autoload; do if [ -d \"$d\" ]; then echo \"lint $d:\"; gdlint \"$d\" 2>&1 | head -10 || true; fi; done"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_COMMAND\" | grep -qE '(rm -rf /|rm -rf ~|sudo rm|chmod 777|:\\(\\)\\{ :\\|:\\& \\};:|> /dev/sda|mkfs)'; then echo 'BLOCKED: destructive command pattern' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v godot >/dev/null 2>&1; then v=$(godot --version 2>/dev/null | head -1); echo \"godot: $v\"; case \"$v\" in 4.3*|4.4*|4.5*|4.6*) ;; 4.*) echo 'note: godot-superpowers targets 4.3+. Some skills (TileMapLayer, Parallax2D) require 4.3+.' ;; *) echo 'warn: Godot < 4.x detected. Use the gdscript-migrator agent.' ;; esac; else echo 'note: godot CLI not on PATH'; fi; if ! command -v gdformat >/dev/null 2>&1; then echo 'note: gdtoolkit not installed. pipx install gdtoolkit==4.*'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
