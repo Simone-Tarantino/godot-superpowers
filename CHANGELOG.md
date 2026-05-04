@@ -3,6 +3,23 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.3.0] — 2026-05-04
+
+### Added
+- `orchestrator` agent (sonnet): decomposes a milestone into independent worker tasks, dispatches workers + `file-verifier` in parallel, aggregates short summaries. Never writes code itself. Hard-requires an approved GDD + plan + named milestone before running.
+- `file-verifier` agent (haiku): external semantic check on a single Godot file after every Edit/Write. Reads the file fresh (no writer-context pollution), queries `godot-docs` MCP, returns CRITICAL/WARNING/INFO findings. Does not rewrite.
+- `subagent-dev-mode` skill: documents the orchestrator + worker + verifier loop, activation triggers, token-discipline tactics, anti-patterns. Gated on approved GDD + plan.
+- New `PostToolUse Edit|Write` hook: prints `verifier reminder: dispatch file-verifier agent on <path>` after any write to `.gd` / `.tscn` / `.tres` / `.gdshader`. Visible reminder so the verifier is not skipped.
+- New verification rule in `using-godot-superpowers`: every write to a Godot source file must be followed by a `file-verifier` dispatch. Applies whether or not subagent dev mode is active.
+
+### Changed
+- README and CLAUDE.md catalogs: 26 skills (was 25), 13 subagents (was 11). Hook table updated.
+- Marketplace and plugin descriptions reference the new subagent dev mode.
+
+### Why
+- Token discipline: workers and verifier run in isolated context, main-context Claude only ingests short summaries — milestones with 5+ files no longer balloon the main context.
+- Correctness: every written file is independently re-read and checked against the live Godot 4.x docs MCP before being considered done. Catches API drift the writer's pre-trained knowledge would miss.
+
 ## [1.2.0] — 2026-05-04
 
 ### Added

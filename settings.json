@@ -103,6 +103,10 @@
           {
             "type": "command",
             "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep '\\.tscn$'); if [ -n \"$files\" ] && command -v godot >/dev/null 2>&1; then for f in $files; do godot --headless --check-only --path \"$CLAUDE_PROJECT_DIR\" \"$f\" 2>&1 | head -5 || true; done; fi"
+          },
+          {
+            "type": "command",
+            "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep -E '\\.(gd|tscn|tres|gdshader)$'); if [ -n \"$files\" ]; then for f in $files; do echo \"verifier reminder: dispatch file-verifier agent on $f (subagent-dev-mode skill)\"; done; fi"
           }
         ]
       }

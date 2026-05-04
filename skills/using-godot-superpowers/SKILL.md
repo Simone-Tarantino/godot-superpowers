@@ -23,6 +23,16 @@ For any code you are about to emit, especially when called from another skill:
 
 When `context7` is available it is a useful secondary source for ecosystem libraries (gdtoolkit, GUT, GdUnit4, Phantom Camera, Dialogic, Beehave, LimboAI), but `godot-docs` MCP wins for engine APIs.
 
+## The verification rule (after every write to a Godot source file)
+
+> **After any `Edit` / `Write` to `.gd`, `.tscn`, `.tres`, or `.gdshader`, dispatch the `file-verifier` agent on that exact path before considering the change done.** Do not re-read the file in main context — the verifier reads it fresh and returns findings only.
+
+This applies whether or not subagent dev mode is active. The verifier is cheap (Haiku), isolated (does not pollute main context), and catches the things `gdformat` / `gdlint` / `--check-only` cannot: API drift, plan deviations, composition violations, deprecated nodes for the project's Godot version.
+
+When implementing a milestone touching 3+ files or 2+ subsystems, escalate to full subagent dev mode: hand off to the `orchestrator` agent and let it dispatch workers + verifier in parallel. See the `subagent-dev-mode` skill for the full workflow.
+
+If a `PostToolUse` hook printed `verifier reminder: …` and you have not yet dispatched `file-verifier` for that path, do so now.
+
 ## The design rule
 
 > Design before code. Always. For every project, regardless of size.

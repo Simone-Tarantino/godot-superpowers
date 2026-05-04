@@ -23,13 +23,14 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 
 ## What you get
 
-### 25 skills
+### 26 skills
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
-| **Design gates** | `using-godot-superpowers` | Auto-loaded dispatcher: enforces design-before-code rule |
+| **Design gates** | `using-godot-superpowers` | Auto-loaded dispatcher: enforces design-before-code + verifier-after-write rule |
 |  | `game-brainstorming` | Idea → approved GDD via structured Q&A (hard-gates implementation) |
 |  | `writing-game-plan` | Approved GDD → approved milestone plan (hard-gates implementation) |
+|  | `subagent-dev-mode` | Orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); flat main-context tokens |
 | **Foundation** | `bootstrap-godot-project` | Scaffold full directory layout + base autoloads |
 |  | `godot-patterns` | Godot 4.x reference (auto-loaded on `.gd`/`.tscn`) |
 |  | `setup-collision-layers` | Configure 2D/3D physics layer names |
@@ -53,10 +54,12 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 |  | `genre-pack-3d-action` | SpringArm camera, lock-on |
 |  | `genre-pack-turnbased` | TurnManager, action queue |
 
-### 11 subagents
+### 13 subagents
 
 | Agent | Model | Use |
 |-------|-------|-----|
+| `orchestrator` | sonnet | Decompose milestone → parallel workers + verifier; never writes code itself |
+| `file-verifier` | haiku | External semantic check on a single Godot file after every Edit/Write; findings only |
 | `code-reviewer` | sonnet | GDScript review against Godot 4.x best practices |
 | `scene-architect` | sonnet | Design `.tscn` hierarchies + collision layers |
 | `game-designer` | sonnet | Mechanics, balancing, level design |
@@ -73,6 +76,7 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 
 - **PostToolUse** Edit/Write `.gd` → `gdformat`
 - **PostToolUse** Edit/Write `.tscn` → `godot --check-only` validation
+- **PostToolUse** Edit/Write `.gd`/`.tscn`/`.tres`/`.gdshader` → prints `verifier reminder: dispatch file-verifier agent on <path>`
 - **Stop** → `gdlint` on `scripts/` and `autoload/`
 - **PreToolUse** Bash → block destructive patterns
 - **SessionStart** → Godot version check + gdtoolkit availability

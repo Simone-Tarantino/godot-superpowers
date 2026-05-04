@@ -70,18 +70,20 @@ cp -R agents skills hooks settings.json settings.local.json .mcp.json /path/to/g
 |------|---------|--------|
 | `PostToolUse Edit\|Write` | Any `.gd` file written | `gdformat` runs |
 | `PostToolUse Edit\|Write` | Any `.tscn` file written | `godot --check-only` validates |
+| `PostToolUse Edit\|Write` | Any `.gd` / `.tscn` / `.tres` / `.gdshader` written | Prints `verifier reminder: dispatch file-verifier agent on <path>` |
 | `Stop` | Claude finishes response | `gdlint` on `scripts/` and `autoload/` |
 | `PreToolUse Bash` | Any bash command | Blocks destructive patterns |
 | `SessionStart` | Session begins | Prints Godot version + warns if `gdtoolkit` missing |
 
 Do not bypass these hooks (no `--no-verify`, no skipping format) without user request.
 
-## Skill catalog (25)
+## Skill catalog (26)
 
 **Design gates** (auto-loaded; precede everything else):
-- `using-godot-superpowers` — auto-loaded dispatcher (`paths: ["**/*.gd", ...]`); enforces design-before-code rule
+- `using-godot-superpowers` — auto-loaded dispatcher (`paths: ["**/*.gd", ...]`); enforces design-before-code + verifier-after-write rule
 - `game-brainstorming` — idea → approved GDD via structured Q&A; hard-gates implementation skills
 - `writing-game-plan` — approved GDD → approved milestone plan; hard-gates implementation skills
+- `subagent-dev-mode` — orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); keeps main-context tokens flat
 
 **Foundation** (run early in a project's life, AFTER plan approved):
 - `bootstrap-godot-project` — full directory + autoload scaffold
@@ -117,10 +119,12 @@ Do not bypass these hooks (no `--no-verify`, no skipping format) without user re
 - `genre-pack-3d-action` — SpringArm camera, lock-on, dodge roll, animation tree
 - `genre-pack-turnbased` — TurnManager, Action queue, deterministic RNG
 
-## Agent catalog (11)
+## Agent catalog (13)
 
 | Agent | Model | Use |
 |-------|-------|-----|
+| `orchestrator` | sonnet | Decompose milestone → parallel workers + verifier; never writes code itself |
+| `file-verifier` | haiku | External semantic check on a single Godot file after every Edit/Write; findings only |
 | `code-reviewer` | sonnet | GDScript review against Godot 4.x best practices |
 | `scene-architect` | sonnet | `.tscn` hierarchies + collision layers |
 | `game-designer` | sonnet | Mechanics, balancing, level design |
