@@ -11,7 +11,7 @@
       "name": "godot-superpowers",
       "source": "./",
       "description": "22 skills, 11 subagents, hooks (gdformat / gdlint / .tscn validation), MCP integration. Covers scaffolding, components, state machines, save systems, GUT tests, shaders, audio, export pipelines, and genre packs (platformer, top-down, 3D action, turn-based).",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Simone Tarantino"
       },

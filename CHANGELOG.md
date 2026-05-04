@@ -3,6 +3,12 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.0.1] — 2026-05-04
+
+### Fixed
+- Plugin manifest: dropped unsupported `agents` field (auto-discovered) and `hooks` reference (`hooks/hooks.json` is auto-loaded by convention).
+- `hooks/hooks.json`: wrapped contents in the required `{"hooks": {...}}` envelope.
+
 ## [1.0.0] — 2026-05-04
 
 Initial release.
