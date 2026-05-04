@@ -10,7 +10,6 @@
   "repository": "https://github.com/Simone-Tarantino/godot-superpowers",
   "keywords": ["godot", "godot4", "gdscript", "gamedev", "game-development"],
   "skills": "./skills/",
-  "agents": "./agents/",
   "hooks": "./hooks/hooks.json",
   "mcpServers": "./.mcp.json"
 }
