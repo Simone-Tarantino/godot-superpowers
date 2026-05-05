@@ -3,6 +3,26 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.3.1] — 2026-05-05
+
+### Fixed
+- `orchestrator` agent: dropped `TodoWrite` from declared tools (not portable across Claude Code versions); added `Edit` and `Write`. The orchestrator now updates the plan markdown directly instead of dispatching a worker for every checkbox flip.
+- `orchestrator` agent: added a hard retry cap — maximum 2 fix-passes per file after a CRITICAL verifier finding, then escalate to the user. Prevents infinite verify→fix loops.
+- `file-verifier` agent: explicit MCP-down downgrade rule. When `godot-docs` MCP is unavailable, every API-correctness finding drops from CRITICAL to WARNING; only syntactic Godot 3.x leftovers and missing type hints stay CRITICAL.
+- Verifier-reminder hook: skips when running inside a subagent (`CLAUDE_AGENT_NAME` set), and produces one consolidated line for all changed files instead of one line per file. Less visual noise when the orchestrator is already auto-dispatching the verifier.
+- `.mcp.json`: added `git` and `memory` servers at tier 2, matching the README. The `memory` server is recommended for the orchestrator to persist milestone state across sessions.
+
+### Added
+- `orchestrator` agent: canonical `<orchestrator-state>` block schema (milestone, phase, pending/in_progress/completed paths, blocked_on, fix_passes, last_updated). Lives at the top of the plan markdown; orchestrator reads it on resume instead of re-deriving state from chat history.
+- `orchestrator` agent: language directive — final batch report to the user must match the user's chat language; file paths, severity tags, and code stay verbatim. Repository content stays English-only.
+- GitHub Actions CI: `.github/workflows/validate.yml` runs `scripts/validate.sh` plus a hook-parity check on every push and PR to `main`.
+
+### Why
+- **Wasteful dispatch**: dispatching a full subagent just to flip a checkbox in a markdown file was costing tokens for no semantic check. Orchestrator now writes plan state directly.
+- **Loop safety**: a verifier that keeps flagging CRITICAL on a file the writer cannot fix would have looped forever. Capped at 2 passes.
+- **MCP availability is not guaranteed**: every claim of API correctness depended on `godot-docs` MCP. Without it, downgrade — do not guess.
+- **Multilingual UX**: repository must stay English-only (per `CLAUDE.md`), but the user is not always English-speaking; orchestrator reports now match the user's chat language.
+
 ## [1.3.0] — 2026-05-04
 
 ### Added

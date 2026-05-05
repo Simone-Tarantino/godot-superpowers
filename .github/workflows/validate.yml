@@ -1,0 +1,28 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run validator
+        run: bash scripts/validate.sh
+
+      - name: Verify hooks parity
+        run: |
+          generated=$(jq -S '{hooks: .hooks}' settings.json)
+          checked_in=$(jq -S '.' hooks/hooks.json)
+          if [ "$generated" != "$checked_in" ]; then
+            echo "::error::hooks/hooks.json out of sync with settings.json — run scripts/sync-hooks.sh"
+            exit 1
+          fi

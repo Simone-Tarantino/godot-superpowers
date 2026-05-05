@@ -106,7 +106,7 @@
           },
           {
             "type": "command",
-            "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep -E '\\.(gd|tscn|tres|gdshader)$'); if [ -n \"$files\" ]; then for f in $files; do echo \"verifier reminder: dispatch file-verifier agent on $f (subagent-dev-mode skill)\"; done; fi"
+            "command": "if [ -n \"$CLAUDE_AGENT_NAME\" ] || [ \"$CLAUDE_SUBAGENT\" = \"1\" ]; then exit 0; fi; files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep -E '\\.(gd|tscn|tres|gdshader)$'); if [ -n \"$files\" ]; then count=$(echo \"$files\" | wc -l | tr -d ' '); echo \"verifier: dispatch file-verifier on $count file(s) [$(echo $files | tr '\\n' ' ')]\"; fi"
           }
         ]
       }

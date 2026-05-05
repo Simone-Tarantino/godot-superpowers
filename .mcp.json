@@ -18,6 +18,18 @@
       "_purpose": "Library / framework docs (gdtoolkit, GUT, Phantom Camera, etc.)",
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "git": {
+      "_tier": 2,
+      "_purpose": "Version control queries (log, diff, blame) without shelling out",
+      "command": "uvx",
+      "args": ["mcp-server-git"]
+    },
+    "memory": {
+      "_tier": 2,
+      "_purpose": "Persistent cross-session memory — recommended for the orchestrator agent to retain milestone state",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
     }
   }
 }
