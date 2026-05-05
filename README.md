@@ -30,13 +30,16 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 
 ## What you get
 
-### 26 skills
+### 29 skills
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
 | **Design gates** | `using-godot-superpowers` | Auto-loaded dispatcher: enforces design-before-code + verifier-after-write rule |
 |  | `game-brainstorming` | Idea → approved GDD via structured Q&A (hard-gates implementation) |
 |  | `writing-game-plan` | Approved GDD → approved milestone plan (hard-gates implementation) |
+|  | `codebase-survey` | Read-only map of files / APIs / hotspots a planned feature will touch on an existing project |
+|  | `feature-spec` | Approved survey → approved feature spec (design delta on top of GDD) |
+|  | `feature-plan` | Approved feature spec → approved feature plan (hard-gates implementation) |
 |  | `subagent-dev-mode` | Orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); flat main-context tokens |
 | **Foundation** | `bootstrap-godot-project` | Scaffold full directory layout + base autoloads |
 |  | `godot-patterns` | Godot 4.x reference (auto-loaded on `.gd`/`.tscn`) |

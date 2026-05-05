@@ -136,7 +136,7 @@ missing=()
 for f in skills/*/SKILL.md; do
     name=$(basename "$(dirname "$f")")
     case "$name" in
-        game-brainstorming|writing-game-plan|gdd-writer|update-docs|using-godot-superpowers) continue ;;  # design / docs only
+        game-brainstorming|writing-game-plan|gdd-writer|update-docs|using-godot-superpowers|codebase-survey|feature-spec|feature-plan) continue ;;  # design / docs only
     esac
     if ! grep -q '\*\*Authoritative source\*\*' "$f"; then
         missing+=("$f")
@@ -175,6 +175,31 @@ if [ -n "$broken" ]; then
 else
     echo "  OK  all relative SKILL.md links resolve"
 fi
+
+echo "== Feature-trail path conventions (skill bodies cite the canonical paths) =="
+# Each feature-trail skill must reference its canonical output path inside its body.
+declare -a feature_path_checks=(
+    "skills/codebase-survey/SKILL.md|docs/features/<YYYY-MM-DD>-<slug>-survey.md"
+    "skills/feature-spec/SKILL.md|docs/features/<YYYY-MM-DD>-<slug>-feature.md"
+    "skills/feature-plan/SKILL.md|docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md"
+)
+path_drift=0
+for entry in "${feature_path_checks[@]}"; do
+    file="${entry%%|*}"
+    needle="${entry##*|}"
+    if [ ! -f "$file" ]; then
+        echo "  FAIL $file missing"
+        fail=1
+        path_drift=1
+        continue
+    fi
+    if ! grep -qF "$needle" "$file"; then
+        echo "  FAIL $file does not cite canonical path '$needle'"
+        fail=1
+        path_drift=1
+    fi
+done
+[ "$path_drift" -eq 0 ] && echo "  OK  all feature-trail skills cite their canonical output paths"
 
 echo "== Summary =="
 if [ $fail -eq 0 ]; then

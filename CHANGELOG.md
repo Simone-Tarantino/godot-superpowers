@@ -3,6 +3,29 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.5.0] — 2026-05-05
+
+### Added
+- **Feature-mode trail (trail B)** for changes on top of an existing game, parallel to the existing greenfield trail (`game-brainstorming` → `gdd-writer` → `writing-game-plan`). Three new design-gate skills, gated by user approval, hard-block implementation skills until approved:
+  - **`codebase-survey`** — read-only mapping of scenes / scripts / autoloads / resources / signals a planned feature will touch. Output: `docs/features/<YYYY-MM-DD>-<slug>-survey.md`. Captures public API, integration points (signal subscribers, callers), regression hotspots (3+ refs), and `[OPEN]` questions for the spec.
+  - **`feature-spec`** — surgical design doc for one bounded feature. Output: `docs/features/<YYYY-MM-DD>-<slug>-feature.md`. Sections: Problem / Player-facing change / Scope IN / Scope OUT / Integration / New mechanics (`[HYPOTHESIS]` template reused from `gdd-writer`) / Regression risks / Acceptance criteria / Tuning numbers / Rollback plan / Open questions. Includes a trivial-feature shortcut (one-file changes can skip survey + most sections).
+  - **`feature-plan`** — milestone-based technical plan from spec + survey. Output: `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`. Required tables: Files create / Files edit / Files delete; mandatory regression-test plan tied to survey hotspots; `<orchestrator-state>` placeholder. Sequencing rules require regression tests against current behavior BEFORE feature integration.
+- **Orchestrator now accepts either trail.** `agents/orchestrator.md` "Hard preconditions" section restated as Path A (greenfield: GDD + plan) OR Path B (feature: spec + feature-plan). Decomposition heuristics gain feature-mode rows. The `<orchestrator-state>` block path now resolves to the active plan file (whole-game `-plan.md` or feature `-feature-plan.md`).
+- **Validator path-convention check**: `scripts/validate.sh` now verifies that each feature-trail skill body cites its canonical output path verbatim — drift between skill body and convention fails the build.
+- **Validator skip list extended**: `codebase-survey`, `feature-spec`, and `feature-plan` are exempt from the "Authoritative source" callout requirement (design-only skills, never emit Godot code), consistent with `game-brainstorming` / `writing-game-plan` / `gdd-writer` / `update-docs` / `using-godot-superpowers`.
+
+### Changed
+- **`using-godot-superpowers` dispatcher** now routes design requests across two named trails (A — greenfield, B — feature on existing game) with explicit trigger-phrase tables and an updated "Order of operations" diagram. The auto-loaded `paths` glob list adds `*-feature.md`, `*-feature-plan.md`, `*-survey.md`.
+- **`update-docs` cross-check** extended to the feature artefact set: surveys, specs, and feature plans are now part of the read-baseline; cross-checks include "Files: edit" path existence, acceptance-criterion ↔ PROGRESS coverage, regression-test presence per hotspot, and promotion of confirmed `[HYPOTHESIS]` mechanics from spec into the GDD.
+- **README catalog and `CLAUDE.md` Skill catalog** updated from 26 → 29 skills. The three new skills sit under "Design gates" alongside the existing greenfield gates, with the trail (A vs B) labelled per skill.
+- **`marketplace.json` plugin description** mentions the new feature-mode trail in addition to subagent dev mode.
+
+### Why
+- **Bounded changes need a bounded design surface.** Forcing a full GDD + whole-game plan for "add a double jump" creates friction so high that users skip the design gate entirely and bypass `file-verifier` discipline. The feature trail keeps the gate in place but scopes the artefacts to the actual delta.
+- **Existing-game features fail because of integration, not invention.** Most rework comes from a new mechanic colliding with an existing signal subscriber or autoload contract. The mandatory survey step makes that integration surface explicit before the spec commits to a solution.
+- **Orchestrator resumability across paths.** With the same `<YYYY-MM-DD>-<slug>` prefix used by survey, spec, and feature-plan (matching the greenfield prefix used by GDD + plan), the orchestrator state block remains a single deterministic resume point regardless of which trail produced the plan.
+- **Test discipline before integration.** Writing a regression test against current behavior FIRST captures pre-feature truth — flipping the order would let the new behavior re-baseline the assertion silently, defeating the test.
+
 ## [1.4.0] — 2026-05-05
 
 ### Added

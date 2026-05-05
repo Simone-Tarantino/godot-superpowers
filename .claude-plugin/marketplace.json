@@ -10,8 +10,8 @@
     {
       "name": "godot-superpowers",
       "source": "./",
-      "description": "26 skills, 13 subagents, hooks (gdformat / gdlint / .tscn validation / file-verifier dispatch reminder), MCP integration. Covers scaffolding, components, state machines, save systems, GUT tests, shaders, audio, export pipelines, genre packs, and a subagent dev mode (orchestrator + file-verifier) for token-efficient milestone execution.",
-      "version": "1.4.0",
+      "description": "29 skills, 13 subagents, hooks (gdformat / gdlint / .tscn validation / file-verifier dispatch reminder), MCP integration. Covers scaffolding, components, state machines, save systems, GUT tests, shaders, audio, export pipelines, genre packs, a subagent dev mode (orchestrator + file-verifier) for token-efficient milestone execution, and a feature-mode trail (codebase-survey + feature-spec + feature-plan) for changes on top of existing games.",
+      "version": "1.5.0",
       "author": {
         "name": "Simone Tarantino"
       },

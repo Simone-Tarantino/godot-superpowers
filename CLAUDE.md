@@ -15,7 +15,7 @@ Targets **Godot 4.3+**. All technical content tracks the official [Godot docs](h
 ├── .claude-plugin/plugin.json    # plugin manifest — declares ONLY `skills` + `mcpServers`. `agents/` and `hooks/hooks.json` are picked up by Claude Code's plugin-mode convention, not by explicit fields here.
 ├── .claude-plugin/marketplace.json # marketplace listing (single-plugin marketplace) — version must stay in lock-step with plugin.json
 ├── agents/                       # 13 subagents (auto-discovered when plugin-loaded)
-├── skills/                       # 26 skills (each <name>/SKILL.md) — declared via `skills` in plugin.json
+├── skills/                       # 29 skills (each <name>/SKILL.md) — declared via `skills` in plugin.json
 ├── hooks/hooks.json              # plugin-mode hooks file (mirror of `settings.json`'s `hooks` block); not referenced by plugin.json — Claude Code reads it by convention when the plugin is loaded
 ├── .mcp.json                     # recommended MCP servers — declared via `mcpServers` in plugin.json. Strict to the MCP schema: no `_tier` / `_purpose` annotations inline.
 ├── .claude-plugin/mcp-meta.json   # human-readable tier + purpose per MCP server (sidecar — keeps `.mcp.json` strict-schema-clean)
@@ -82,12 +82,15 @@ cp settings.local.json.example /path/to/godot/project/.claude/settings.local.jso
 
 Do not bypass these hooks (no `--no-verify`, no skipping format) without user request.
 
-## Skill catalog (26)
+## Skill catalog (29)
 
 **Design gates** (auto-loaded; precede everything else):
-- `using-godot-superpowers` — auto-loaded dispatcher (`paths: ["**/*.gd", ...]`); enforces design-before-code + verifier-after-write rule
-- `game-brainstorming` — idea → approved GDD via structured Q&A; hard-gates implementation skills
-- `writing-game-plan` — approved GDD → approved milestone plan; hard-gates implementation skills
+- `using-godot-superpowers` — auto-loaded dispatcher (`paths: ["**/*.gd", ...]`); enforces design-before-code + verifier-after-write rule; routes greenfield vs feature trail
+- `game-brainstorming` — idea → approved GDD via structured Q&A; hard-gates implementation skills (greenfield trail)
+- `writing-game-plan` — approved GDD → approved milestone plan; hard-gates implementation skills (greenfield trail)
+- `codebase-survey` — read-only map of files / APIs / hotspots a planned feature will touch on an existing project (feature trail, step 1)
+- `feature-spec` — approved survey → approved feature spec; design delta on top of GDD (feature trail, step 2)
+- `feature-plan` — approved feature spec → approved feature plan; hard-gates implementation skills (feature trail, step 3)
 - `subagent-dev-mode` — orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); keeps main-context tokens flat
 
 **Foundation** (run early in a project's life, AFTER plan approved):

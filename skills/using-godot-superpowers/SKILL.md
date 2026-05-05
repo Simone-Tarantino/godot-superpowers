@@ -1,7 +1,7 @@
 ---
 name: using-godot-superpowers
-description: "Auto-loaded dispatcher for godot-superpowers. Establishes the design-before-code rule: any creative game-development task (new project, new feature, new mechanic, new scene, new component, new genre pack, new shader, new audio system) MUST start with the game-brainstorming skill, which produces an approved GDD and plan before any implementation skill runs."
-paths: ["**/*.gd", "**/*.tscn", "**/*.tres", "**/*.gdshader", "project.godot", "**/*-gdd.md", "**/*-plan.md"]
+description: "Auto-loaded dispatcher for godot-superpowers. Establishes the design-before-code rule across two trails: trail A (greenfield) routes to game-brainstorming → gdd-writer → writing-game-plan; trail B (feature on an existing game) routes to codebase-survey → feature-spec → feature-plan. Any creative game-development task (new project, new feature, new mechanic, new scene, new component, new genre pack, new shader, new audio system) MUST clear both gates of the matching trail before any implementation skill runs."
+paths: ["**/*.gd", "**/*.tscn", "**/*.tres", "**/*.gdshader", "project.godot", "**/*-gdd.md", "**/*-plan.md", "**/*-feature.md", "**/*-feature-plan.md", "**/*-survey.md"]
 ---
 
 # Using godot-superpowers
@@ -81,7 +81,7 @@ If a `PostToolUse` hook printed `verifier: dispatch file-verifier on <N> file(s)
 
 > Design before code. Always. For every project, regardless of size.
 
-If the user asks you to **start something creative** in a Godot project — new project, new mechanic, new feature, new scene, new component, new shader, new audio system, new genre pack — you MUST invoke the `game-brainstorming` skill BEFORE any of:
+If the user asks you to **start something creative** in a Godot project — new project, new mechanic, new feature, new scene, new component, new shader, new audio system, new genre pack — you MUST clear the matching design trail BEFORE any of these implementation skills run:
 
 - `bootstrap-godot-project`
 - `create-scene`, `create-component`, `create-state-machine`, `create-resource`, `create-autoload`
@@ -89,20 +89,49 @@ If the user asks you to **start something creative** in a Godot project — new 
 - `genre-pack-platformer`, `genre-pack-topdown`, `genre-pack-3d-action`, `genre-pack-turnbased`
 - `shader-writer`, `sfx-generator`, `export-config`
 
-`game-brainstorming` produces an approved GDD; `writing-game-plan` produces an approved plan. Both gates must clear before implementation.
+There are two trails. Pick exactly one based on whether the project already has Godot source files.
+
+**Trail A — greenfield (no `project.godot` yet, or whole-game redesign):**
+
+1. `game-brainstorming` → produces an approved GDD at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` (via `gdd-writer`).
+2. `writing-game-plan` → produces an approved plan at `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`.
+
+**Trail B — feature on an existing game (`project.godot` exists, change is bounded):**
+
+1. `codebase-survey` → produces a read-only file/API/hotspot map at `docs/features/<YYYY-MM-DD>-<slug>-survey.md` (skippable for trivial one-file changes).
+2. `feature-spec` → produces an approved feature spec at `docs/features/<YYYY-MM-DD>-<slug>-feature.md`.
+3. `feature-plan` → produces an approved feature plan at `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`.
+
+Both trails end in an approved plan file. Both gates must clear before implementation. The `orchestrator` agent enforces the same precondition on dispatch — it refuses to run until the matching plan is `Status: Approved`.
+
+If the change starts as trail B but turns out to touch every system, escalate to trail A and re-plan from scratch — do not silently mutate a feature plan into a whole-game plan.
 
 ## When the rule applies
 
-Invoke `game-brainstorming` when the user says (or implies) anything in this column:
+Two design trails exist. Pick the trail that matches the user's situation, then route to the first skill.
+
+### Trail A — Greenfield (no game yet, or whole-game redesign)
+
+First skill: `game-brainstorming`.
 
 | Trigger phrase | Why it counts |
 |---|---|
 | "Let's start a new game" / "Let's build X" | New project — needs full GDD + plan |
-| "Add a [combat / inventory / dialogue / save] system" | New subsystem — needs design pass even on existing project |
-| "Make the player do Y" | New mechanic — design before scaffolding |
-| "I want a level / boss / cutscene" | New content type — design pass |
 | "Build a [platformer / RPG / shooter / …]" | Genre choice + scope unclear — full brainstorm |
-| "Convert this from 2D to 3D" / "Refactor X" | Major change — re-brainstorm |
+| "Convert this from 2D to 3D" / "Refactor whole game X" | Major redesign — re-brainstorm |
+
+### Trail B — Feature on existing game (code already exists)
+
+First skill: `codebase-survey`. Then `feature-spec`. Then `feature-plan`.
+
+| Trigger phrase | Why it counts |
+|---|---|
+| "Add a [combat / inventory / dialogue / save] system to this game" | New subsystem on existing code — needs design pass scoped to a delta |
+| "Make the player do Y" / "Add double jump / dash / wall slide" | New mechanic on existing player — survey + spec + plan |
+| "I want a level / boss / cutscene in this game" | New content type — design pass scoped to a delta |
+| "Tweak / extend an existing mechanic" | Bounded change — survey first, then spec |
+
+If the change is genuinely cross-cutting (touches every system), it's a re-plan — escalate to trail A.
 
 ## When the rule does NOT apply
 
@@ -131,10 +160,16 @@ These thoughts mean you are about to skip the gate. Stop.
 
 1. Read this skill (you're here).
 2. Decide: design work or maintenance? (See "When the rule does/doesn't apply".)
-3. If design: invoke `game-brainstorming`. Wait for GDD approval.
-4. After GDD: invoke `writing-game-plan`. Wait for plan approval.
-5. Only now: invoke implementation skills, milestone by milestone, per the plan.
-6. After each milestone: update plan `Status`. Run `gut-test-writer`. Confirm with user before next milestone.
+3. If design, pick the trail by checking whether the project already has Godot source files:
+   - **Trail A — greenfield** (no `project.godot`, or whole-game redesign):
+     - Invoke `game-brainstorming`. Wait for GDD approval.
+     - Invoke `writing-game-plan`. Wait for plan approval.
+   - **Trail B — feature on existing game** (`project.godot` exists, change is bounded):
+     - Invoke `codebase-survey`. Produces `docs/features/<date>-<slug>-survey.md`.
+     - Invoke `feature-spec`. Wait for spec approval.
+     - Invoke `feature-plan`. Wait for plan approval.
+4. Only now: invoke implementation skills, milestone by milestone, per the plan.
+5. After each milestone: update plan `Status`. Run `gut-test-writer`. Confirm with user before next milestone.
 
 ## Interaction with `paths` auto-loading
 

@@ -1,6 +1,6 @@
 ---
 name: update-docs
-description: Sync project documentation after implementations or design changes — README.md, the GDD under `docs/design/`, the plan under `docs/plans/`, PROGRESS.md, CLAUDE.md. Cross-checks divergences between design and code. Only operates on documents that exist; doesn't force-create.
+description: Sync project documentation after implementations or design changes — README.md, the GDD under `docs/design/`, plans under `docs/plans/` (whole-game and feature plans), feature surveys and specs under `docs/features/`, PROGRESS.md, CLAUDE.md. Cross-checks divergences between design and code. Only operates on documents that exist; doesn't force-create.
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: [all | progress | gdd | claude-md | readme | check]
 ---
@@ -9,19 +9,22 @@ argument-hint: [all | progress | gdd | claude-md | readme | check]
 
 # Update Project Docs
 
-Keeps the four standard project docs in sync. Only touches the ones that exist — does not force a project to adopt all four.
+Keeps every project doc in sync — both the **core docs** (README, GDD, whole-game plan, PROGRESS, CLAUDE) and any **feature artifacts** (surveys, specs, feature plans) that exist. Only touches the ones that are present; does not force a project to adopt every doc type.
 
-## The four docs
+## Doc set (core + feature artifacts)
 
 | Doc | Purpose | Update when |
 |-----|---------|-------------|
 | `README.md` | What the project is, how to run it, top-level overview | Tech stack changes, install steps change |
 | `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` | Game Design Document — design intent | Design decisions made (use `gdd-writer`) |
-| `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` | Implementation plan — milestones, skills, deliverables | Plan revised (use `writing-game-plan`) |
-| `PROGRESS.md` | Status: GDD → code mapping, divergences | After every implementation |
+| `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` | Whole-game implementation plan — milestones, skills, deliverables | Plan revised (use `writing-game-plan`) |
+| `docs/features/<YYYY-MM-DD>-<slug>-survey.md` | Feature codebase survey — files / APIs / hotspots | Whenever a new feature lands on existing code (use `codebase-survey`) |
+| `docs/features/<YYYY-MM-DD>-<slug>-feature.md` | Feature spec — design delta on top of GDD | New feature designed (use `feature-spec`) |
+| `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md` | Feature implementation plan | Feature plan revised (use `feature-plan`) |
+| `PROGRESS.md` | Status: GDD/spec → code mapping, divergences | After every implementation |
 | `CLAUDE.md` | Architecture and conventions for Claude Code | New subsystem, new convention, new module |
 
-`PROGRESS.md` and `CLAUDE.md` are optional but recommended on any project larger than ~10 scenes.
+`PROGRESS.md` and `CLAUDE.md` are optional but recommended on any project larger than ~10 scenes. The `docs/features/*` trio only exists on projects that adopt feature-mode (trail B).
 
 ## Decision flow
 
@@ -77,9 +80,12 @@ Always read all docs that exist before modifying any of them:
 ```
 1. Read README.md                              -> overview baseline
 2. Read docs/design/*-gdd.md (latest)          -> design baseline (if exists)
-3. Read docs/plans/*-plan.md  (latest)         -> plan baseline (if exists)
-4. Read PROGRESS.md                            -> implementation status (if exists)
-5. Read CLAUDE.md                              -> architecture baseline (if exists)
+3. Read docs/plans/*-plan.md  (latest)         -> whole-game plan baseline (if exists)
+4. Read docs/features/*-survey.md  (each)      -> feature surveys (if any)
+5. Read docs/features/*-feature.md (each)      -> feature specs (if any)
+6. Read docs/plans/*-feature-plan.md (each)    -> feature plans (if any)
+7. Read PROGRESS.md                            -> implementation status (if exists)
+8. Read CLAUDE.md                              -> architecture baseline (if exists)
 ```
 
 Then read code in `scripts/`, `autoload/`, `scenes/` to verify what's actually implemented.
@@ -140,6 +146,10 @@ Verify pairwise consistency:
 | PROGRESS [x] for Y | Code in `scripts/` actually has Y |
 | CLAUDE.md describes class Z | Class Z still exists |
 | README install steps | Match `project.godot`, addons, dependencies |
+| Feature spec acceptance criteria | All present in PROGRESS or marked `[?]` divergence |
+| Feature plan "Files: edit" | Each path exists; plan-stated diff intent matches code reality |
+| Feature spec `[HYPOTHESIS]` mechanic, status `Done` | Promote into the GDD's Mechanics section, drop the `[HYPOTHESIS]` tag |
+| Feature survey hotspots | Regression tests listed in the feature plan exist under `tests/` |
 
 Common divergences to flag:
 
