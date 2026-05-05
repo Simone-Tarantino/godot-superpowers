@@ -1,0 +1,25 @@
+{
+  "comment": "Sidecar metadata for .mcp.json. Documents tier and purpose per server without injecting non-standard fields into the MCP config consumed by Claude Code. Authoritative tier table also lives in README.md (\"MCP servers\" section).",
+  "servers": {
+    "godot-mcp": {
+      "tier": 1,
+      "purpose": "Editor automation: run scenes, query nodes, edit project.godot"
+    },
+    "godot-docs": {
+      "tier": 1,
+      "purpose": "Inline Godot documentation lookup"
+    },
+    "context7": {
+      "tier": 1,
+      "purpose": "Library / framework docs (gdtoolkit, GUT, Phantom Camera, etc.)"
+    },
+    "git": {
+      "tier": 2,
+      "purpose": "Version control queries (log, diff, blame) without shelling out"
+    },
+    "memory": {
+      "tier": 2,
+      "purpose": "Persistent cross-session memory — recommended for the orchestrator agent to retain milestone state"
+    }
+  }
+}

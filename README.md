@@ -15,11 +15,18 @@ claude --plugin-dir /path/to/godot-superpowers
 
 Skills then namespaced as `/godot-superpowers:<skill-name>`.
 
+> The plugin manifest (`.claude-plugin/plugin.json`) explicitly declares only `skills` + `mcpServers`. Subagents under `agents/` and hooks in `hooks/hooks.json` are picked up automatically by Claude Code's plugin-mode convention — no extra wiring required.
+
 ### As project config (drop-in)
 
-Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings.local.json` into your project's `.claude/` directory.
+```bash
+TARGET=/path/to/godot/project/.claude
+mkdir -p "$TARGET"
+cp -R agents skills hooks settings.json .mcp.json "$TARGET"/
+cp settings.local.json.example "$TARGET"/settings.local.json
+```
 
-`settings.local.json` is what enables the MCP servers declared in `.mcp.json`. Without it, MCP servers won't auto-start. It is normally gitignored on real projects (per-user state), so commit `.mcp.json` but keep `settings.local.json` local.
+Note: `settings.local.json` itself is **gitignored** in this repo (per-user state). The tracked template is `settings.local.json.example` — copy it into the target as `settings.local.json` and edit if needed. The default template enables only the **tier 1 (essential)** MCP servers via an explicit `enabledMcpjsonServers` whitelist (`godot-mcp`, `godot-docs`, `context7`); tier 2 servers (`git`, `memory`) are opt-in — append them to the whitelist to enable. Without a `settings.local.json`, `.mcp.json` is declarative-only and no server starts.
 
 ## What you get
 
@@ -33,11 +40,11 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 |  | `subagent-dev-mode` | Orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); flat main-context tokens |
 | **Foundation** | `bootstrap-godot-project` | Scaffold full directory layout + base autoloads |
 |  | `godot-patterns` | Godot 4.x reference (auto-loaded on `.gd`/`.tscn`) |
-|  | `setup-collision-layers` | Configure 2D/3D physics layer names |
+|  | `setup-collision-layers` | 11-layer scheme for 2D + 3D physics (player, enemies, environment, projectiles, pickups, triggers, hurtboxes, hitboxes) |
 |  | `setup-input-map` | Standard actions + remap UI |
 |  | `setup-save-system` | Resource-based save/load |
 |  | `setup-localization` | CSV / gettext i18n, language switcher, font fallback |
-| **Scaffolding** | `create-scene` | Scene templates: player, enemy, level, menu, HUD |
+| **Scaffolding** | `create-scene` | 2D/3D scene templates: player, enemy, level, main menu, pause menu, HUD, inventory UI, dialogue UI |
 |  | `create-component` | HealthComponent, Hurtbox, Hitbox, etc. |
 |  | `create-state-machine` | Node-based state machine + states |
 |  | `create-resource` | Custom Resource classes for game data |
@@ -49,10 +56,10 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 |  | `sfx-generator` | Audio generation + Godot bus layout |
 |  | `gdd-writer` | Generic Game Design Document |
 | **Build** | `export-config` | Export presets for Win/Mac/Linux/Web/Android/iOS |
-| **Genre packs** | `genre-pack-platformer` | Coyote time, jump buffer, variable jump |
-|  | `genre-pack-topdown` | 8-dir movement, A* pathfinding |
-|  | `genre-pack-3d-action` | SpringArm camera, lock-on |
-|  | `genre-pack-turnbased` | TurnManager, action queue |
+| **Genre packs** | `genre-pack-platformer` | Coyote time, jump buffer, variable jump, wall jump, dash |
+|  | `genre-pack-topdown` | 8-dir movement, A* pathfinding, twin-stick aim |
+|  | `genre-pack-3d-action` | SpringArm camera, lock-on, dodge roll, animation tree |
+|  | `genre-pack-turnbased` | TurnManager, action queue, deterministic RNG |
 
 ### 13 subagents
 
@@ -75,22 +82,24 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 ### Hooks
 
 - **PostToolUse** Edit/Write `.gd` → `gdformat`
-- **PostToolUse** Edit/Write `.tscn` → `godot --check-only` validation
-- **PostToolUse** Edit/Write `.gd`/`.tscn`/`.tres`/`.gdshader` → prints `verifier reminder: dispatch file-verifier agent on <path>`
+- **PostToolUse** Edit/Write `.tscn` → `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` validation (first 5 lines of output surfaced)
+- **PostToolUse** Edit/Write `.gd`/`.tscn`/`.tres`/`.gdshader` → prints `verifier: dispatch file-verifier on <N> file(s) [<paths>]` (skipped inside subagents)
 - **Stop** → `gdlint` on `scripts/` and `autoload/`
 - **PreToolUse** Bash → block destructive patterns
 - **SessionStart** → Godot version check + gdtoolkit availability
 
 ### MCP servers (recommended)
 
-| Server | Tier | Purpose |
-|--------|------|---------|
-| `godot-mcp` | essential | Editor automation |
-| `godot-docs` | essential | Inline doc lookup |
-| `context7` | essential | Library docs |
-| `git`, `memory` | tier 2 | Version control + persistent memory |
-| `elevenlabs` | tier 2 | Audio generation (used by `sound-designer`, `sfx-generator`) |
-| `pixellab`, `comfyui` | tier 2 | Image generation (used by `art-director`) |
+| Server | Tier | Bundled in `.mcp.json` | Purpose |
+|--------|------|---|---------|
+| `godot-mcp` | tier 1 (essential) | yes | Editor automation |
+| `godot-docs` | tier 1 (essential) | yes | Inline doc lookup |
+| `context7` | tier 1 (essential) | yes | Library docs |
+| `git`, `memory` | tier 2 (recommended) | yes | Version control + persistent memory |
+| `elevenlabs` | tier 3 (external) | **no** | Audio generation — referenced by `sound-designer` / `sfx-generator` if installed |
+| `pixellab`, `comfyui` | tier 3 (external) | **no** | Image generation — referenced by `art-director` if installed |
+
+**Tier 3 servers are optional external integrations.** They are NOT shipped in `.mcp.json` because their npm packages, API keys, and self-hosted backends vary per user. To enable them, add the server stanza to your project's `.mcp.json` (or to `~/.claude.json` globally) and provide the relevant credentials. The `sound-designer` and `art-director` agents detect availability at runtime and fall back to placeholders / free CC0 sources when the MCP is absent.
 
 ## Conventions enforced
 
@@ -101,8 +110,11 @@ Copy `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings
 - **Custom Resources for game data**, not Dictionary literals
 - **Unique scene names** (`%NodeName`) instead of long `$Path/To/Node`
 - **TileMapLayer** (4.3+), not legacy `TileMap`
+- **`Parallax2D`** (4.3+) over deprecated `ParallaxBackground` / `ParallaxLayer`
 - **`change_scene_to_packed()`** with preloaded `PackedScene`
 - **Hurtbox/Hitbox on separate collision layers** — see `setup-collision-layers`
+- **Resource save** for game state (not JSON — JSON loses Vector2 / Color / typed objects)
+- **`_unhandled_input`** for action triggers, not `_input` (UI takes precedence)
 
 ## Requirements
 

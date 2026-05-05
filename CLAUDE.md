@@ -12,13 +12,15 @@ Targets **Godot 4.3+**. All technical content tracks the official [Godot docs](h
 
 ```
 .
-├── .claude-plugin/plugin.json    # plugin manifest (links skills/, agents/, hooks/, .mcp.json)
-├── agents/                       # 11 subagents
-├── skills/                       # 25 skills (each <name>/SKILL.md)
-├── hooks/hooks.json              # extracted hooks for plugin packaging (mirror of settings.json's `hooks` block)
-├── .mcp.json                     # recommended MCP servers
-├── settings.json                 # default permissions + hooks (source of truth for hooks)
-├── settings.local.json           # MCP enables (gitignored on real projects)
+├── .claude-plugin/plugin.json    # plugin manifest — declares ONLY `skills` + `mcpServers`. `agents/` and `hooks/hooks.json` are picked up by Claude Code's plugin-mode convention, not by explicit fields here.
+├── .claude-plugin/marketplace.json # marketplace listing (single-plugin marketplace) — version must stay in lock-step with plugin.json
+├── agents/                       # 13 subagents (auto-discovered when plugin-loaded)
+├── skills/                       # 26 skills (each <name>/SKILL.md) — declared via `skills` in plugin.json
+├── hooks/hooks.json              # plugin-mode hooks file (mirror of `settings.json`'s `hooks` block); not referenced by plugin.json — Claude Code reads it by convention when the plugin is loaded
+├── .mcp.json                     # recommended MCP servers — declared via `mcpServers` in plugin.json. Strict to the MCP schema: no `_tier` / `_purpose` annotations inline.
+├── .claude-plugin/mcp-meta.json   # human-readable tier + purpose per MCP server (sidecar — keeps `.mcp.json` strict-schema-clean)
+├── settings.json                 # drop-in mode source of truth: default permissions + hooks. The `hooks` block here is canonical and is mirrored to `hooks/hooks.json` by `scripts/sync-hooks.sh`.
+├── settings.local.json           # MCP enables (gitignored on real projects); see `settings.local.json.example` for the template
 ├── scripts/                      # repo tooling: sync-hooks.sh, validate.sh
 ├── LICENSE                       # MIT
 ├── README.md                     # plugin overview for end users
@@ -41,8 +43,9 @@ When editing skills or agents in this directory:
 
 This repo IS the plugin — no separate `dist/` step. Two source-of-truth conventions matter:
 
-1. **Hooks**: `settings.json` `.hooks` is canonical. `hooks/hooks.json` is a mirror Claude Code reads when the plugin is loaded via `--plugin-dir` / marketplace. Whenever the `hooks` block in `settings.json` changes, run `scripts/sync-hooks.sh` to regenerate `hooks/hooks.json`. The validator below catches drift.
-2. **Skill / agent frontmatter**: every skill must have `name` + `description`; every agent must have `name`. The validator enforces this.
+1. **Hooks**: `settings.json` `.hooks` is canonical (used in drop-in mode). `hooks/hooks.json` is a mirror Claude Code reads in plugin mode (`--plugin-dir` / marketplace) by convention — `plugin.json` does NOT declare it explicitly. Whenever the `hooks` block in `settings.json` changes, run `scripts/sync-hooks.sh` to regenerate `hooks/hooks.json`. The validator below catches drift.
+2. **Versions**: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` MUST share the same `version`. The validator enforces lock-step.
+3. **Skill / agent frontmatter**: every skill must have `name` + `description`; every agent must have `name`. The validator enforces this.
 
 ### Local test loop
 
@@ -54,7 +57,9 @@ scripts/validate.sh
 claude --plugin-dir /Users/you/Code/claude-gamedev /path/to/godot/project
 
 # 3. Or drop it in directly:
-cp -R agents skills hooks settings.json settings.local.json .mcp.json /path/to/godot/project/.claude/
+cp -R agents skills hooks settings.json .mcp.json /path/to/godot/project/.claude/
+cp settings.local.json.example /path/to/godot/project/.claude/settings.local.json
+# settings.local.json is gitignored in this repo — copy from the tracked .example template
 ```
 
 ### Pre-commit / pre-publish checklist
@@ -69,8 +74,8 @@ cp -R agents skills hooks settings.json settings.local.json .mcp.json /path/to/g
 | Hook | Trigger | Action |
 |------|---------|--------|
 | `PostToolUse Edit\|Write` | Any `.gd` file written | `gdformat` runs |
-| `PostToolUse Edit\|Write` | Any `.tscn` file written | `godot --check-only` validates |
-| `PostToolUse Edit\|Write` | Any `.gd` / `.tscn` / `.tres` / `.gdshader` written | Prints `verifier reminder: dispatch file-verifier agent on <path>` |
+| `PostToolUse Edit\|Write` | Any `.tscn` file written | `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` validates (only the first 5 lines of output are surfaced) |
+| `PostToolUse Edit\|Write` | Any `.gd` / `.tscn` / `.tres` / `.gdshader` written (skipped inside subagents) | Prints `verifier: dispatch file-verifier on <N> file(s) [<paths>]` |
 | `Stop` | Claude finishes response | `gdlint` on `scripts/` and `autoload/` |
 | `PreToolUse Bash` | Any bash command | Blocks destructive patterns |
 | `SessionStart` | Session begins | Prints Godot version + warns if `gdtoolkit` missing |
@@ -137,6 +142,30 @@ Do not bypass these hooks (no `--no-verify`, no skipping format) without user re
 | `gdscript-migrator` | sonnet | Godot 3.x → 4.x code migration |
 | `playtest-analyst` | sonnet | Bug reports → fixes + regression tests |
 
+## Agent picker (situation → call)
+
+Always invoke via `Agent` tool with `subagent_type: "<name>"`. Full table also in `using-godot-superpowers` skill (auto-loaded on `.gd`/`.tscn`).
+
+| Situation | Call |
+|---|---|
+| Just wrote `.gd` / `.tscn` / `.tres` / `.gdshader` | `file-verifier` (mandatory) |
+| Milestone with 3+ files or 2+ subsystems | `orchestrator` |
+| Scene tree / collision layout design | `scene-architect` |
+| GDScript review / API drift check | `code-reviewer` |
+| GUT / GdUnit4 tests, pre-release QA | `qa-tester` |
+| Mechanic / balancing / level pacing design | `game-designer` |
+| Audio bus + AudioManager planning | `sound-designer` |
+| Art bible / asset plan / palette | `art-director` |
+| Frame spike / profiler / GC investigation | `performance-profiler` |
+| Export presets / signing / CI | `export-engineer` |
+| Addon recommendation / install | `addon-curator` |
+| Godot 3.x → 4.x port | `gdscript-migrator` |
+| Playtester bug → fix + regression test | `playtest-analyst` |
+| Codebase research / "where is X?" | `Explore` (built-in) |
+| Single-file edit, known fix | direct skill, no dispatch |
+
+Priority: (1) verifier after any write — no exceptions; (2) orchestrator on multi-file milestone; (3) read-only → analyst agent; (4) genre-pack → skill directly. Otherwise main context.
+
 ## Project-side rules these skills/agents enforce
 
 When operating in a downstream Godot project, the skills and agents enforce:
@@ -160,7 +189,7 @@ This plugin can be:
 
 1. **Installed via Claude Code marketplace** (once published) — namespaced as `/godot-superpowers:<skill>`
 2. **Loaded locally** — `claude --plugin-dir /path/to/godot-superpowers`
-3. **Copied as `.claude/`** — drop `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json`, and `settings.local.json` into a project's `.claude/` directory. `settings.local.json` enables the MCP servers (`enableAllProjectMcpServers` + `enabledMcpjsonServers`); without it `.mcp.json` is declarative-only and the servers stay off. Keep `settings.local.json` gitignored on real projects (per-user state).
+3. **Copied as `.claude/`** — drop `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json` into a project's `.claude/` directory, plus `settings.local.json.example` copied as `.claude/settings.local.json` (the source file is gitignored here, so the tracked `.example` is the install template). The template uses an explicit `enabledMcpjsonServers` whitelist (tier 1 only by default); tier 2 servers (`git`, `memory`) are opt-in. Without `settings.local.json`, `.mcp.json` is declarative-only and no server starts. Keep `settings.local.json` gitignored on real projects (per-user state).
 
 When copied as `.claude/` (option 3), skills are NOT namespaced — invoked as `/<skill>` directly.
 

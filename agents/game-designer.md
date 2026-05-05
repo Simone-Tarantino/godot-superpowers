@@ -57,7 +57,7 @@ When analyzing or proposing design:
 - **Iteration plan**: how to playtest and refine
 - **Pillar fit**: which design pillar this reinforces (and which it might violate)
 
-Document substantial decisions in `GDD.md` (use the `gdd-writer` skill). Mark unconfirmed mechanics `[HYPOTHESIS]` until validated through playtesting.
+Document substantial decisions in the project GDD at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` (use the `gdd-writer` skill). Mark unconfirmed mechanics `[HYPOTHESIS]` until validated through playtesting.
 
 ## What NOT to do
 

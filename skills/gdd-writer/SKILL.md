@@ -1,6 +1,6 @@
 ---
 name: gdd-writer
-description: Write or update a Game Design Document (GDD.md) for the project. Use when adding mechanics, recording design decisions, or documenting scope. NOT for technical implementation — that lives in code and CLAUDE.md.
+description: Write or update a Game Design Document at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md`. Use when adding mechanics, recording design decisions, or documenting scope. NOT for technical implementation — that lives in code and CLAUDE.md.
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: [section | all | new-mechanic]
 ---
@@ -9,13 +9,19 @@ argument-hint: [section | all | new-mechanic]
 
 # GDD Writer
 
-Maintains `GDD.md` (Game Design Document) at project root. Keeps **design** (what the game is and why) separate from **implementation** (how the code works).
+Maintains the Game Design Document at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md`. Keeps **design** (what the game is and why) separate from **implementation** (how the code works).
 
 **Core rule:** the GDD drives the code. If code diverges from the GDD, document the divergence in `PROGRESS.md` (or `NOTES.md`); never silently rewrite the GDD to match code.
 
+## File path convention
+
+- **Location**: `docs/design/`
+- **Filename**: `<YYYY-MM-DD>-<slug>-gdd.md` (date is the GDD's first-write date; slug is kebab-case of the working title).
+- **One GDD per project**. On major scope rewrites, write a NEW dated file rather than editing the old one — keep the trail. The plan file (`docs/plans/<YYYY-MM-DD>-<slug>-plan.md`) references the GDD path.
+
 ## Standard GDD sections
 
-If no `GDD.md` exists, create one with these sections. Skip sections that don't apply to the genre.
+If no GDD exists, create one with these sections. Skip sections that don't apply to the genre.
 
 | Section | Content | Update when |
 |---------|---------|-------------|
@@ -96,7 +102,7 @@ Mid-game DPS amulet for ice mages — pairs with Glacier Strike.
 
 | Anti-pattern | Why bad | Fix |
 |--------------|---------|-----|
-| Code snippets in GDD | Mixes design with implementation, rots fast | Move to `CLAUDE.md` or commit message |
+| Code snippets in the GDD | Mixes design with implementation, rots fast | Move to `CLAUDE.md` or commit message |
 | Class names like `PlayerController` | Implementation detail | Use design names ("the Hero") |
 | Exact balance numbers without rationale | Hard to revisit | Always pair with intent |
 | Walls of prose | Unscannable | Tables and bullets |

@@ -130,25 +130,21 @@ Pair Hurtbox + Hitbox with proper collision layers (see `setup-collision-layers`
 - HurtboxComponent on the receiver, layer = `PlayerHurtbox` or `EnemyHurtbox`
 - HitboxComponent on the dealer, layer = `PlayerHitbox` or `EnemyHitbox`, mask = opposing hurtbox layer
 
-## MoveComponent (2D platformer)
+## MoveComponent (genre-agnostic skeleton)
+
+This foundation skill ships only the **generic** MoveComponent — a thin `CharacterBody2D` driver that owns horizontal velocity and the `move_and_slide()` call. Genre-specific behavior (gravity tuning, jump shaping, coyote / buffer windows, dashes, wall jumps, top-down 8-direction movement, 3D camera-relative motion) lives in the matching genre pack.
 
 ```gdscript
 class_name MoveComponent2D
 extends Node
-## Drives a CharacterBody2D parent's velocity from input + gravity + state.
+## Genre-agnostic 2D mover. Drives a CharacterBody2D parent's horizontal velocity.
+## Vertical motion (gravity, jump, fall behavior) is intentionally NOT handled here —
+## a genre pack (or your own subclass) layers it on top via `physics_step`.
 
 @export var max_speed: float = 250.0
 @export var acceleration: float = 1500.0
 @export var friction: float = 1500.0
-@export var air_acceleration: float = 800.0
-@export var jump_velocity: float = -400.0
-@export var gravity: float = 980.0
-@export var fall_gravity_multiplier: float = 1.6
-@export var jump_buffer_time: float = 0.1
-@export var coyote_time: float = 0.1
 
-var _coyote_timer: float = 0.0
-var _jump_buffer_timer: float = 0.0
 var body: CharacterBody2D
 
 
@@ -157,37 +153,26 @@ func _ready() -> void:
     assert(body, "MoveComponent2D parent must be CharacterBody2D")
 
 
-func physics_step(delta: float, input_x: float, jump_pressed: bool, jump_released: bool) -> void:
-    # gravity
-    var g := gravity * (fall_gravity_multiplier if body.velocity.y > 0 else 1.0)
-    body.velocity.y += g * delta
-    # horizontal
+func physics_step(_delta: float, input_x: float) -> void:
     if absf(input_x) > 0.0:
-        var accel := acceleration if body.is_on_floor() else air_acceleration
-        body.velocity.x = move_toward(body.velocity.x, input_x * max_speed, accel * delta)
+        body.velocity.x = move_toward(body.velocity.x, input_x * max_speed, acceleration * _delta)
     else:
-        body.velocity.x = move_toward(body.velocity.x, 0.0, friction * delta)
-    # coyote + buffer
-    if body.is_on_floor():
-        _coyote_timer = coyote_time
-    else:
-        _coyote_timer = maxf(0.0, _coyote_timer - delta)
-    if jump_pressed:
-        _jump_buffer_timer = jump_buffer_time
-    else:
-        _jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
-    # jump
-    if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
-        body.velocity.y = jump_velocity
-        _jump_buffer_timer = 0.0
-        _coyote_timer = 0.0
-    # variable jump height
-    if jump_released and body.velocity.y < 0.0:
-        body.velocity.y *= 0.5
+        body.velocity.x = move_toward(body.velocity.x, 0.0, friction * _delta)
     body.move_and_slide()
 ```
 
 For 3D, swap `CharacterBody2D` → `CharacterBody3D` and use `Vector3` velocity.
+
+### Genre specializations
+
+| Genre | Skill | Adds on top of MoveComponent |
+|---|---|---|
+| 2D platformer | `genre-pack-platformer` | gravity + variable jump + coyote time + jump buffer + wall jump / dash |
+| 2D top-down | `genre-pack-topdown` | 8-direction movement, no gravity, optional A* path follow |
+| 3D action | `genre-pack-3d-action` | camera-relative movement, SpringArm follow, lock-on facing |
+| Turn-based | `genre-pack-turnbased` | tile-snap movement, action-queue integration |
+
+Pick exactly one genre pack per project (per the `writing-game-plan` sequencing rules) before tuning player feel.
 
 ## InteractableComponent
 
@@ -302,13 +287,11 @@ Player (CharacterBody2D)
 ├── Hitbox (HitboxComponent2D)         -> enabled during attack states
 │   └── CollisionShape2D
 ├── HealthComponent
-├── MoveComponent
+├── MoveComponent                      -> generic 2D mover (this skill); a genre pack may swap it
 ├── InventoryComponent
-└── StateMachine
-    ├── Idle
-    ├── Run
-    ├── Jump
-    └── Attack
+└── StateMachine                       -> states are project- and genre-specific; a platformer
+    ├── Idle                              would add Jump / Fall / WallSlide, a top-down would
+    └── Run                               add Aim / Roll, etc. — see the matching genre pack.
 ```
 
 Player script wires components in `_ready`:
@@ -324,10 +307,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+    # Genre-agnostic input drive. A genre pack will add gravity, jump, dash, etc.
     var input_x := Input.get_axis("move_left", "move_right")
-    var jump_pressed := Input.is_action_just_pressed("jump")
-    var jump_released := Input.is_action_just_released("jump")
-    _move.physics_step(delta, input_x, jump_pressed, jump_released)
+    _move.physics_step(delta, input_x)
 ```
 
 ## Notes

@@ -15,14 +15,8 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      # validate.sh is the canonical entrypoint: it covers JSON validity (incl.
+      # marketplace.json), hooks parity, plugin/marketplace version coherence,
+      # frontmatter, catalog drift, callout coverage, and link resolution.
       - name: Run validator
         run: bash scripts/validate.sh
-
-      - name: Verify hooks parity
-        run: |
-          generated=$(jq -S '{hooks: .hooks}' settings.json)
-          checked_in=$(jq -S '.' hooks/hooks.json)
-          if [ "$generated" != "$checked_in" ]; then
-            echo "::error::hooks/hooks.json out of sync with settings.json — run scripts/sync-hooks.sh"
-            exit 1
-          fi

@@ -3,13 +3,49 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.4.0] — 2026-05-05
+
+### Added
+- **Unified GDD / plan file convention**: every GDD lives at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md`, every plan at `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`. `gdd-writer`, `update-docs`, `writing-game-plan`, `game-brainstorming`, `game-designer`, `orchestrator`, and `subagent-dev-mode` now all reference the same paths — no more `GDD.md` at root or `docs/<game>-*.md` ambiguity.
+- **`settings.local.json.example`**: tracked install template for the per-user MCP enable file. Drop-in instructions copy it to `.claude/settings.local.json`. The actual `settings.local.json` stays gitignored.
+- **`.claude-plugin/mcp-meta.json`**: sidecar describing tier + purpose per MCP server. Keeps `.mcp.json` strict to the MCP schema (no `_tier` / `_purpose` / `_comment` keys inline) so a stricter loader cannot reject the config.
+- **Plugin / marketplace version coherence check** in `scripts/validate.sh`: refuses to PASS if `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` drift apart.
+- **Tier-3 MCP availability callout** on `art-director` and `sound-designer` agents: pixellab / comfyui / elevenlabs are explicitly NOT bundled in `.mcp.json`, agents detect availability at runtime, fall back to placeholders + free CC0 sources, and say so in their report.
+
+### Changed
+- **`art-director` semantics aligned across dispatcher, agent, README, CLAUDE.md**: every surface now describes the agent as asset *generation* (PixelLab / ComfyUI MCP when available, placeholders + free CC0 otherwise). The dispatcher previously labelled it "planning-only", which contradicted the agent body.
+- **`MoveComponent` in `create-component` is now genre-agnostic**: gravity, jump shaping, coyote / buffer windows, wall jump, and dash were leaking from `genre-pack-platformer` into the foundation skill. `create-component` ships only the generic 2D mover; platformer feel lives exclusively in `genre-pack-platformer` (`PlatformerMoveComponent`). A new "Genre specializations" table points readers to the matching pack.
+- **README catalog re-aligned with skill frontmatter**: `setup-collision-layers` now mentions the 11-layer scheme; `create-scene` lists every template (player, enemy, level, main menu, pause menu, HUD, inventory, dialogue); genre packs include wall jump / dash / twin-stick aim / dodge roll / animation tree / deterministic RNG.
+- **README "Conventions enforced"** added the missing rules already present in `CLAUDE.md`: `Parallax2D` (4.3+) over `ParallaxBackground` / `ParallaxLayer`, Resource save (not JSON), `_unhandled_input` over `_input`.
+- **`.tscn` validation hook wording** in README + CLAUDE.md now matches the actual command: `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` (only the first 5 lines of output are surfaced).
+- **`settings.local.json.example` MCP-enable semantics**: dropped `enableAllProjectMcpServers: true` to remove the ambiguity of pairing a "enable everything" flag with a partial whitelist. The file now uses an explicit `enabledMcpjsonServers` whitelist of tier-1 servers; tier-2 (`git`, `memory`) is opt-in.
+- **`plugin.json` author** is now `Simone Tarantino` (with URL), matching `marketplace.json` `owner` and `plugins[0].author`. Previously listed as `godot-superpowers contributors`, which contradicted the marketplace metadata.
+- **CI**: removed the redundant inline "Verify hooks parity" step from `.github/workflows/validate.yml`. `scripts/validate.sh` already runs the parity check; CI now invokes the validator only.
+- **`scripts/validate.sh` JSON validity**: now covers `.claude-plugin/marketplace.json`, `.claude-plugin/mcp-meta.json`, and `settings.local.json.example` (required); `settings.local.json` is treated as optional with a clear `SKIP` line so a fresh clone (where the file is gitignored) does not fail validation.
+- **`scripts/sync-hooks.sh`** comment clarified: plugin-mode reads `hooks/hooks.json` by Claude Code convention, not because `plugin.json` declares it.
+
+### Fixed
+- `marketplace.json` plugin description referenced the obsolete "verifier reminder" wording — replaced with "file-verifier dispatch reminder", consistent with the live hook output and the validator's own anti-drift check.
+- `CLAUDE.md` Layout section now accurately documents what `plugin.json` actually declares (`skills` + `mcpServers` only) versus what is auto-discovered by Claude Code's plugin-mode convention (`agents/`, `hooks/hooks.json`).
+- `subagent-dev-mode` skill: removed Italian phrase `'modalità subagentica'` from `description` and the trigger list. Repository content is English-only per `CLAUDE.md` policy; localized phrasings belong in language packs.
+
+### Security
+- `PreToolUse Bash` hook tightened: in addition to the existing destructive shell patterns (`rm -rf /`, `sudo rm`, `:(){ :|:& };:`, `mkfs`, etc.), the hook now blocks destructive git commands without explicit user confirmation: `git reset --hard`, `git clean -f*`, `git checkout .`, `git checkout -- .`, `git restore .`, `git push --force` / `git push -f`, `git branch -D`, `git reflog expire --expire=now`, `git gc --prune=now`. Settings allowed `Bash(git *)` blanket, which left these history-rewriting / working-tree-destroying commands unfiltered.
+
+### Why
+- **One source of truth for design artifacts**: with three competing path conventions, plans were sometimes written under `docs/<game>-plan.md` and read from `docs/plans/...`, breaking resume scenarios. Unified path makes the orchestrator's `<orchestrator-state>` block resumable across sessions.
+- **Onboarding under a fresh clone**: `settings.local.json` is gitignored, so the README's `cp ... settings.local.json ...` command was broken on day 1. The tracked `.example` template plus updated copy instructions resolve it.
+- **Schema stability for `.mcp.json`**: stripping `_*` annotations keeps the config compatible with strict-mode loaders without losing the human-readable tier metadata, which now lives in the sidecar.
+- **Foundation skills must stay genre-agnostic** (per the existing `CLAUDE.md` editing rule). The platformer logic in `create-component` was a regression of that rule.
+- **Destructive git is the most common irreversible action** Claude can take with `Bash(git *)` allowed. Adding it to the deny regex matches the same threat-model as the existing shell-destructive patterns.
+
 ## [1.3.1] — 2026-05-05
 
 ### Fixed
 - `orchestrator` agent: dropped `TodoWrite` from declared tools (not portable across Claude Code versions); added `Edit` and `Write`. The orchestrator now updates the plan markdown directly instead of dispatching a worker for every checkbox flip.
 - `orchestrator` agent: added a hard retry cap — maximum 2 fix-passes per file after a CRITICAL verifier finding, then escalate to the user. Prevents infinite verify→fix loops.
 - `file-verifier` agent: explicit MCP-down downgrade rule. When `godot-docs` MCP is unavailable, every API-correctness finding drops from CRITICAL to WARNING; only syntactic Godot 3.x leftovers and missing type hints stay CRITICAL.
-- Verifier-reminder hook: skips when running inside a subagent (`CLAUDE_AGENT_NAME` set), and produces one consolidated line for all changed files instead of one line per file. Less visual noise when the orchestrator is already auto-dispatching the verifier.
+- Verifier-reminder hook: skips when running inside a subagent (`CLAUDE_AGENT_NAME` set), and produces one consolidated line for all changed files instead of one line per file. New output format: `verifier: dispatch file-verifier on <N> file(s) [<paths>]` (1.3.0 said `verifier reminder: dispatch file-verifier agent on <path>` per file). Less visual noise when the orchestrator is already auto-dispatching the verifier.
 - `.mcp.json`: added `git` and `memory` servers at tier 2, matching the README. The `memory` server is recommended for the orchestrator to persist milestone state across sessions.
 
 ### Added

@@ -1,6 +1,6 @@
 ---
 name: update-docs
-description: Sync project documentation after implementations or design changes — README.md, GDD.md, PROGRESS.md, CLAUDE.md. Cross-checks divergences between design and code. Only operates on documents that exist; doesn't force-create.
+description: Sync project documentation after implementations or design changes — README.md, the GDD under `docs/design/`, the plan under `docs/plans/`, PROGRESS.md, CLAUDE.md. Cross-checks divergences between design and code. Only operates on documents that exist; doesn't force-create.
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: [all | progress | gdd | claude-md | readme | check]
 ---
@@ -16,7 +16,8 @@ Keeps the four standard project docs in sync. Only touches the ones that exist �
 | Doc | Purpose | Update when |
 |-----|---------|-------------|
 | `README.md` | What the project is, how to run it, top-level overview | Tech stack changes, install steps change |
-| `GDD.md` | Game Design Document — design intent | Design decisions made (use `gdd-writer`) |
+| `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` | Game Design Document — design intent | Design decisions made (use `gdd-writer`) |
+| `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` | Implementation plan — milestones, skills, deliverables | Plan revised (use `writing-game-plan`) |
 | `PROGRESS.md` | Status: GDD → code mapping, divergences | After every implementation |
 | `CLAUDE.md` | Architecture and conventions for Claude Code | New subsystem, new convention, new module |
 
@@ -36,7 +37,7 @@ digraph update_flow {
     check [label="Cross-check"];
     node [shape=box];
     progress [label="Update PROGRESS.md\n(checkbox feature)"];
-    gdd [label="Update GDD.md\n(design section)"];
+    gdd [label="Update GDD\n(docs/design/...-gdd.md)"];
     claudemd [label="Update CLAUDE.md\n(arch / convention)"];
     readme [label="Update README.md\n(install / overview)"];
     cross [label="Verify docs agree"];
@@ -64,7 +65,7 @@ digraph update_flow {
 |------------|--------|
 | `/update-docs` or `/update-docs all` | Read all docs + relevant code, cross-check, update everything that needs updating |
 | `/update-docs progress` | PROGRESS.md only (after implementation) |
-| `/update-docs gdd` | GDD.md only (after design decision) |
+| `/update-docs gdd` | GDD only (after design decision) |
 | `/update-docs claude-md` | CLAUDE.md only (after architecture change) |
 | `/update-docs readme` | README.md only (after setup/tech stack change) |
 | `/update-docs check` | Cross-check only — flag divergences without writing |
@@ -74,10 +75,11 @@ digraph update_flow {
 Always read all docs that exist before modifying any of them:
 
 ```
-1. Read README.md     -> overview baseline
-2. Read GDD.md        -> design baseline (if exists)
-3. Read PROGRESS.md   -> implementation status (if exists)
-4. Read CLAUDE.md     -> architecture baseline (if exists)
+1. Read README.md                              -> overview baseline
+2. Read docs/design/*-gdd.md (latest)          -> design baseline (if exists)
+3. Read docs/plans/*-plan.md  (latest)         -> plan baseline (if exists)
+4. Read PROGRESS.md                            -> implementation status (if exists)
+5. Read CLAUDE.md                              -> architecture baseline (if exists)
 ```
 
 Then read code in `scripts/`, `autoload/`, `scenes/` to verify what's actually implemented.
@@ -98,7 +100,7 @@ For each feature touched, update its status:
 - If a GDD feature has no entry in PROGRESS.md, add it.
 - Update "Last updated: YYYY-MM-DD" at top of file.
 
-## Step 3 — Update GDD.md (only when design changed)
+## Step 3 — Update GDD (only when design changed)
 
 Modify only if:
 - A mechanic was redefined
@@ -107,7 +109,7 @@ Modify only if:
 - A `[HYPOTHESIS]` section was confirmed or discarded
 
 **Rules:**
-- Never edit GDD.md to "match the code" — code follows GDD, not vice versa.
+- Never edit the GDD to "match the code" — code follows GDD, not vice versa.
 - If code intentionally diverges, document in PROGRESS.md "Divergences" section.
 - Use `gdd-writer` skill for substantial design additions.
 

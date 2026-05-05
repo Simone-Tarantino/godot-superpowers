@@ -8,6 +8,50 @@ paths: ["**/*.gd", "**/*.tscn", "**/*.tres", "**/*.gdshader", "project.godot", "
 
 This file loads automatically whenever Claude touches a Godot project (matched via `paths` above). Read it first.
 
+> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (Full rationale and version-detection workflow in the "The other rule" section below.)
+
+## Agent picker (decision table)
+
+Use this table FIRST. It maps situation → exact `Agent` tool call. Always invoke via `Agent` with `subagent_type: "<name>"`.
+
+| Situation | Agent | Why this one |
+|---|---|---|
+| Just wrote / edited a `.gd` `.tscn` `.tres` `.gdshader` | `file-verifier` | Mandatory after every write — Haiku, isolated, returns findings only |
+| Implementing milestone with 3+ files or 2+ subsystems | `orchestrator` | Decomposes, dispatches workers + verifier in parallel, keeps main context flat |
+| Designing scene tree / collision layout / node hierarchy | `scene-architect` | `.tscn` structure + layer math without writing scripts |
+| Reviewing GDScript for quality / API drift / conventions | `code-reviewer` | Sonnet review against Godot 4.x best practices |
+| Writing GUT / GdUnit4 tests, pre-release checklist | `qa-tester` | Test scaffolding + coverage gaps |
+| Designing mechanics, balancing, level pacing | `game-designer` | GDD-side reasoning, not code |
+| Audio pipeline, bus layout, AudioManager pattern | `sound-designer` | Pairs with `sfx-generator` skill |
+| Asset generation, art bible, palette/style guide | `art-director` | Generates sprites / textures / 3D models via PixelLab / ComfyUI MCP when available; falls back to placeholders + free CC0 sources otherwise |
+| Slow frame, profiler spike, GC churn investigation | `performance-profiler` | Root-cause analysis, not blanket optimization |
+| Configuring export presets / signing / CI build matrix | `export-engineer` | Haiku, mechanical export config |
+| "Which addon should I use for X?" / installing addons | `addon-curator` | Haiku, recommendations only |
+| Project still on Godot 3.x — port to 4.x | `gdscript-migrator` | `yield`/`KinematicBody*`/`onready var` rewrites |
+| Bug report from playtester → reproduce + fix + regression test | `playtest-analyst` | Triage + fix path |
+| Codebase research ("where is X?", "find all callers") | `Explore` (built-in) | Read-only, isolated, cheap |
+| One-shot single-file edit, known fix | direct skill / direct edit | Don't dispatch — overhead > value |
+
+### Decision rules in priority order
+
+1. **Did I just write a Godot source file?** → `file-verifier` first, no exceptions.
+2. **Am I about to touch 3+ files for one milestone?** → `orchestrator`, never DIY.
+3. **Is the question read-only?** → `Explore` or relevant analyst agent (`code-reviewer`, `performance-profiler`, `playtest-analyst`).
+4. **Is the task genre-specific implementation?** → invoke the matching `genre-pack-*` SKILL directly (in main context or via worker), not an agent.
+5. **None of the above** → main context, no dispatch.
+
+### How to call
+
+```
+Agent(
+  subagent_type: "<name from table>",
+  description: "<3-5 word task>",
+  prompt: "<self-contained brief — agent has no prior context>"
+)
+```
+
+Parallelize independent dispatches in a single message (multiple `Agent` calls in one tool block) — sequential when one's output feeds the next.
+
 ## The other rule (applies always, even when the design gate is cleared)
 
 > **Verify every API against `godot-docs` MCP before emitting code.** No exceptions.
@@ -31,7 +75,7 @@ This applies whether or not subagent dev mode is active. The verifier is cheap (
 
 When implementing a milestone touching 3+ files or 2+ subsystems, escalate to full subagent dev mode: hand off to the `orchestrator` agent and let it dispatch workers + verifier in parallel. See the `subagent-dev-mode` skill for the full workflow.
 
-If a `PostToolUse` hook printed `verifier reminder: …` and you have not yet dispatched `file-verifier` for that path, do so now.
+If a `PostToolUse` hook printed `verifier: dispatch file-verifier on <N> file(s) [...]` and you have not yet dispatched `file-verifier` for those paths, do so now.
 
 ## The design rule
 

@@ -1,4 +1,5 @@
-# Per-user MCP enables (see CLAUDE.md "Distribution" section)
+# Per-user MCP enables (see CLAUDE.md "Distribution" section).
+# Tracked template lives at settings.local.json.example.
 settings.local.json
 
 # OS / editor

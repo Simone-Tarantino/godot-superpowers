@@ -1,6 +1,6 @@
 ---
 name: subagent-dev-mode
-description: "Activate subagentic development mode for milestone execution: an orchestrator agent decomposes work into parallel workers, each write is verified externally by file-verifier, and main-context tokens are kept minimal. Use when the user asks to implement a milestone, build a multi-file feature, or says 'subagent mode' / 'modalità subagentica' / 'orchestrator mode'."
+description: "Activate subagentic development mode for milestone execution: an orchestrator agent decomposes work into parallel workers, each write is verified externally by file-verifier, and main-context tokens are kept minimal. Use when the user asks to implement a milestone, build a multi-file feature, or says 'subagent mode' / 'orchestrator mode'."
 ---
 
 > **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
@@ -31,14 +31,14 @@ Activate this mode when the user says (or implies):
 - "Implement milestone M2"
 - "Build the player + health + hurtbox feature"
 - "Roll out the localization system"
-- "Modalità subagentica" / "subagent mode" / "orchestrator mode"
+- "Subagent mode" / "orchestrator mode"
 - "Parallelize this" / "split this work"
 
 ## Roles
 
 | Role | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
-| **Orchestrator** | `orchestrator` | sonnet | plan, GDD, file paths | TodoWrite + plan status |
+| **Orchestrator** | `orchestrator` | sonnet | plan, GDD, file paths | `<orchestrator-state>` block + plan status |
 | **Worker** | one of the implementation skills/agents | sonnet | files in its scope | the file it owns |
 | **Verifier** | `file-verifier` | haiku | one file + `project.godot` | nothing — findings only |
 | **Researcher** | `Explore` (built-in) | sonnet | codebase | nothing |
@@ -90,7 +90,7 @@ Main context grows whenever Claude reads a file or holds a long tool result. Sub
 | Workers run in **isolated context** (subagent property) | Worker output is one summary, not full file diff |
 | Verifier reads file **fresh**, returns findings only | Main context never ingests the full file |
 | Orchestrator never re-reads files workers wrote | No duplicate file reads |
-| Plan persists in `docs/<game>-plan.md`, not chat scrollback | Resume across sessions without re-reading history |
+| Plan persists in `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`, not chat scrollback | Resume across sessions without re-reading history |
 | Parallel dispatch (1 message, N Agent calls) | Same wall-time as one worker; no sequential context bloat |
 | `Explore` subagent for codebase research | Read-only, isolated, returns excerpts |
 | Caveman mode for inter-agent prose | Less filler in summaries |
@@ -100,15 +100,15 @@ Main context grows whenever Claude reads a file or holds a long tool result. Sub
 ## Step-by-step (what main-context Claude does)
 
 1. **Confirm preconditions**:
-   - `docs/<game>-gdd.md` exists and is approved.
-   - `docs/<game>-plan.md` exists and is approved.
+   - `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` exists and is approved.
+   - `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` exists and is approved.
    - User named a milestone (e.g. "M2: vertical slice").
    If any missing, route back to `game-brainstorming` or `writing-game-plan`. Do not proceed.
 
 2. **Hand off to orchestrator**:
    ```
    Use the orchestrator agent. Brief:
-     - Plan path: docs/<game>-plan.md
+     - Plan path: docs/plans/<YYYY-MM-DD>-<slug>-plan.md
      - Milestone to execute: <name>
      - Constraints: <any tunables the user just specified>
      - Report format: batch summary per orchestrator skill spec
@@ -127,7 +127,7 @@ Main context grows whenever Claude reads a file or holds a long tool result. Sub
 | Worker reports "could not find file X" | Orchestrator dispatches `Explore` to locate; if missing entirely, escalate |
 | Worker deviates from plan | Orchestrator captures deviation in batch summary; main-context Claude asks user to approve / reject |
 | `godot-docs` MCP unavailable | Workers and verifier fall back to `https://docs.godotengine.org/en/stable/` and **say so** in their reports — main-context Claude warns the user |
-| User wants to pause mid-milestone | Orchestrator updates `docs/<game>-plan.md` with current state and stops; resume reads the same file |
+| User wants to pause mid-milestone | Orchestrator updates `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` with current state and stops; resume reads the same file |
 
 ## Anti-patterns
 

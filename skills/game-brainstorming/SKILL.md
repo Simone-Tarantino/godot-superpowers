@@ -21,7 +21,7 @@ You MUST NOT invoke any of these skills, write any `.gd` / `.tscn` / `project.go
 
 This applies to EVERY project regardless of perceived simplicity, including jam games, prototypes, and "I just want to test something." Skipping this step is the single largest source of wasted work in game dev — feature creep, mismatched art, throw-away code paths, mechanics that don't serve the core loop.
 
-Exceptions: read-only skills (`godot-patterns`, `performance-audit`), maintenance skills (`update-docs`, `gut-test-writer`, `gdscript-migrator`), and analysis agents (`code-reviewer`, `playtest-analyst`) may run without a brainstorm.
+Exceptions: read-only skills (`godot-patterns`, `performance-audit`), maintenance skills (`update-docs`, `gut-test-writer`), and analysis agents (`code-reviewer`, `playtest-analyst`, `gdscript-migrator`) may run without a brainstorm.
 </HARD-GATE>
 
 ## Checklist

@@ -35,7 +35,7 @@ Save to `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`. Required sections:
 ```markdown
 # Implementation Plan — <Game Title>
 
-- **GDD**: docs/design/<file>-gdd.md
+- **GDD**: docs/design/<YYYY-MM-DD>-<slug>-gdd.md
 - **Scope class**: jam / prototype / vertical slice / full game
 - **Target platforms**: ...
 - **Author**: <user> + Claude (godot-superpowers)

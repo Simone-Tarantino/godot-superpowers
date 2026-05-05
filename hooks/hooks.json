@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_COMMAND\" | grep -qE '(rm -rf /|rm -rf ~|sudo rm|chmod 777|:\\(\\)\\{ :\\|:\\& \\};:|> /dev/sda|mkfs)'; then echo 'BLOCKED: destructive command pattern' >&2; exit 2; fi"
+            "command": "if echo \"$CLAUDE_COMMAND\" | grep -qE '(rm -rf /|rm -rf ~|sudo rm|chmod 777|:\\(\\)\\{ :\\|:\\& \\};:|> /dev/sda|mkfs)'; then echo 'BLOCKED: destructive shell pattern' >&2; exit 2; fi; if echo \"$CLAUDE_COMMAND\" | grep -qE '(^|[ ;&|])git[ ]+(reset[ ]+--hard|clean[ ]+-[a-z]*f|checkout[ ]+(--[ ]+)?\\.[ ]*$|restore[ ]+(--[ ]+)?\\.[ ]*$|push[ ]+(.*[ ])?(-f([ ]|$)|--force\\b)|branch[ ]+-D\\b|reflog[ ]+expire[ ]+--expire=now|gc[ ]+--prune=now)'; then echo 'BLOCKED: destructive git command — request explicit user confirmation' >&2; exit 2; fi"
           }
         ]
       }
