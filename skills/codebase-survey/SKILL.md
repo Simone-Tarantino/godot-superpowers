@@ -5,8 +5,6 @@ allowed-tools: Read, Grep, Glob, Write
 argument-hint: <slug>
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Codebase Survey
 
 Maps the parts of an **existing** Godot project that a planned feature will touch. Output anchors the downstream `feature-spec` and `feature-plan` to real files, real APIs, and real risks — not to memory or wishful thinking.
@@ -97,7 +95,7 @@ Save to `docs/features/<YYYY-MM-DD>-<slug>-survey.md`:
 ## Integration points (existing code → feature)
 
 - `EventBus.player_died` is connected by `ui/game_over.tscn::_on_player_died` and `audio/audio_manager.gd::_on_player_died`. Feature must not break either.
-- `Player.jump()` is called by `scripts/player/player.gd::_unhandled_input` and `tests/unit/test_player.gd`.
+- `Player.jump()` is called by `scripts/player/player.gd::_unhandled_input` and `test/unit/test_player.gd`.
 - Add fan-out / fan-in callouts wherever a method or signal has 2+ subscribers.
 
 ## New surface needed (does not yet exist)

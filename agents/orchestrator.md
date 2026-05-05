@@ -44,7 +44,7 @@ For each milestone the user asks you to execute:
 5. **Verify each write** — after every worker reports a file written, dispatch `file-verifier` on that file path. Single message, parallel where multiple files landed in the same batch. Verifier returns findings; you do NOT re-read the file yourself.
 6. **Aggregate** — collect worker summaries + verifier findings into one batch report for the user. Format below.
 7. **Block on findings + retry cap** — if verifier reports CRITICAL on any file, do NOT advance to the next phase. Dispatch a fix-worker (the same skill, narrower scope) and re-verify. **Maximum 2 fix-passes per file**; after the second failed verification, stop and escalate to the user with the verifier's exact findings — do not loop further.
-8. **Update plan directly** — once the milestone is clean, edit the active plan file (resolved in step 3) yourself: flip the milestone `Status: ✅`, append a one-line summary, update the `<orchestrator-state>` block. Use `Edit`. No worker dispatch for markdown.
+8. **Dispatch `milestone-integrator`** — once all workers + per-file verifiers report clean (or only WARNING), call `Agent(subagent_type: "milestone-integrator", description: "Integrate <milestone>", prompt: "<self-contained brief: active plan path, milestone name, file list with verifier verdicts, test outcomes>")`. The integrator runs the smoke test (`godot --headless --quit-after 1 <main_scene>`, with `--check-only` fallback), validates `<orchestrator-state>` consistency, checks acceptance criteria, and flips the milestone `Status` itself if `INTEGRATED` or `INTEGRATED_WITH_WARNINGS`. If verdict is `BLOCKED`, the integrator does NOT touch the plan — you must dispatch a fix-pass per its findings (subject to the 2-fix-pass cap from step 7). Do not edit the plan markdown yourself in this step; the integrator owns it.
 
 ## Decomposition heuristics
 
@@ -141,7 +141,7 @@ The repository content (skills, agents, hooks, code, commits, docs) is English-o
 - Never include full worker output in your final report. Summarize.
 - Do not maintain prose state — keep state in the `<orchestrator-state>` block inside the plan file (see schema above).
 - Use `Explore` subagent type when a worker needs codebase research before writing — it is read-only and cheaper.
-- Caveman mode for inter-agent prose; full sentences in user-facing report.
+- Caveman mode for inter-agent prose if available (optional — provided by the `superpowers` plugin; if absent, just write tersely); full sentences in user-facing report.
 
 ## When NOT to use the orchestrator
 

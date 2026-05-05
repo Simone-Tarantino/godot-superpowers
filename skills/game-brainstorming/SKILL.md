@@ -1,10 +1,7 @@
 ---
 name: game-brainstorming
-description: "MUST run before any Godot scaffolding, scene creation, component generation, or genre-pack invocation. Turns a game idea into an approved Game Design Document (GDD) and an approved implementation plan, through a structured one-question-at-a-time dialogue tailored to game development (genre, platform, scope, core loop, art / audio direction). Hard-gates implementation skills until both artifacts are approved."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+description: "MUST run before any Godot scaffolding, scene creation, component generation, or genre-pack invocation. Turns a game idea into an approved Game Design Document (GDD) through a structured one-question-at-a-time dialogue tailored to game development (genre, platform, scope, core loop, art / audio direction). Hands off to `writing-game-plan` for the implementation plan. Hard-gates implementation skills until both artifacts are approved."
 ---
-
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
 
 # Game Brainstorming — design before code
 
@@ -15,9 +12,11 @@ You MUST NOT invoke any of these skills, write any `.gd` / `.tscn` / `project.go
 
 - `bootstrap-godot-project`
 - `create-scene`, `create-component`, `create-state-machine`, `create-resource`, `create-autoload`
-- `setup-collision-layers`, `setup-input-map`, `setup-save-system`, `setup-localization`
+- `setup-collision-layers`, `setup-input-map`, `setup-save-system`, `setup-localization`, `save-schema-migration`
+- `ui-patterns-godot`, `networking-foundation`, `setup-git-godot`
 - `genre-pack-platformer`, `genre-pack-topdown`, `genre-pack-3d-action`, `genre-pack-turnbased`
 - `shader-writer`, `sfx-generator`, `export-config`
+- Any skill that introduces game behavior, infrastructure, or persistent project layout (autoloads, layers, schemas, network code, repo configuration) — when in doubt, gate.
 
 This applies to EVERY project regardless of perceived simplicity, including jam games, prototypes, and "I just want to test something." Skipping this step is the single largest source of wasted work in game dev — feature creep, mismatched art, throw-away code paths, mechanics that don't serve the core loop.
 

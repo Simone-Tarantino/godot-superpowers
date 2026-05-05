@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: [all | progress | gdd | claude-md | readme | check]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Update Project Docs
 
 Keeps every project doc in sync — both the **core docs** (README, GDD, whole-game plan, PROGRESS, CLAUDE) and any **feature artifacts** (surveys, specs, feature plans) that exist. Only touches the ones that are present; does not force a project to adopt every doc type.
@@ -78,15 +76,17 @@ digraph update_flow {
 Always read all docs that exist before modifying any of them:
 
 ```
-1. Read README.md                              -> overview baseline
-2. Read docs/design/*-gdd.md (latest)          -> design baseline (if exists)
-3. Read docs/plans/*-plan.md  (latest)         -> whole-game plan baseline (if exists)
-4. Read docs/features/*-survey.md  (each)      -> feature surveys (if any)
-5. Read docs/features/*-feature.md (each)      -> feature specs (if any)
-6. Read docs/plans/*-feature-plan.md (each)    -> feature plans (if any)
-7. Read PROGRESS.md                            -> implementation status (if exists)
-8. Read CLAUDE.md                              -> architecture baseline (if exists)
+1. Read README.md                                                  -> overview baseline
+2. Read docs/design/*-gdd.md (latest)                              -> design baseline (if exists)
+3. Read docs/plans/*-plan.md  (latest, EXCLUDING *-feature-plan.md) -> whole-game plan baseline (if exists)
+4. Read docs/features/*-survey.md  (each)                          -> feature surveys (if any)
+5. Read docs/features/*-feature.md (each)                          -> feature specs (if any)
+6. Read docs/plans/*-feature-plan.md (each)                        -> feature plans (if any)
+7. Read PROGRESS.md                                                -> implementation status (if exists)
+8. Read CLAUDE.md                                                  -> architecture baseline (if exists)
 ```
+
+> **Glob discipline**: the `*-plan.md` glob in step 3 also matches `*-feature-plan.md` files because the latter ends in `-plan.md`. Step 6 owns feature plans; step 3 must filter them out to avoid reading the same file twice. Use a globber that supports negation (`docs/plans/*-plan.md` minus `docs/plans/*-feature-plan.md`) or, in shell, `ls docs/plans/*-plan.md | grep -v -- '-feature-plan\.md$'`. In tooling-free contexts, list whole-game plans manually after enumerating with `ls docs/plans/`.
 
 Then read code in `scripts/`, `autoload/`, `scenes/` to verify what's actually implemented.
 
@@ -149,7 +149,7 @@ Verify pairwise consistency:
 | Feature spec acceptance criteria | All present in PROGRESS or marked `[?]` divergence |
 | Feature plan "Files: edit" | Each path exists; plan-stated diff intent matches code reality |
 | Feature spec `[HYPOTHESIS]` mechanic, status `Done` | Promote into the GDD's Mechanics section, drop the `[HYPOTHESIS]` tag |
-| Feature survey hotspots | Regression tests listed in the feature plan exist under `tests/` |
+| Feature survey hotspots | Regression tests listed in the feature plan exist under `test/` |
 
 Common divergences to flag:
 

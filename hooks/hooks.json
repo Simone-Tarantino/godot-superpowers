@@ -6,15 +6,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep '\\.gd$'); if [ -n \"$files\" ]; then for f in $files; do if [ -f \"$f\" ]; then gdformat \"$f\" 2>/dev/null && echo \"formatted: $f\" || echo \"format skipped: $f\"; fi; done; fi"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/gdformat-gd.sh\""
           },
           {
             "type": "command",
-            "command": "files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep '\\.tscn$'); if [ -n \"$files\" ] && command -v godot >/dev/null 2>&1; then for f in $files; do godot --headless --check-only --path \"$CLAUDE_PROJECT_DIR\" \"$f\" 2>&1 | head -5 || true; done; fi"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/check-tscn.sh\""
           },
           {
             "type": "command",
-            "command": "if [ -n \"$CLAUDE_AGENT_NAME\" ] || [ \"$CLAUDE_SUBAGENT\" = \"1\" ]; then exit 0; fi; files=$(echo \"$CLAUDE_FILE_PATHS\" 2>/dev/null | tr ',' '\\n' | grep -E '\\.(gd|tscn|tres|gdshader)$'); if [ -n \"$files\" ]; then count=$(echo \"$files\" | wc -l | tr -d ' '); echo \"verifier: dispatch file-verifier on $count file(s) [$(echo $files | tr '\\n' ' ')]\"; fi"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/dep-integrity.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/verifier-reminder.sh\""
           }
         ]
       }
@@ -24,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && for d in scripts autoload; do if [ -d \"$d\" ]; then echo \"lint $d:\"; gdlint \"$d\" 2>&1 | head -10 || true; fi; done"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/stop-gdlint.sh\""
           }
         ]
       }
@@ -35,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_COMMAND\" | grep -qE '(rm -rf /|rm -rf ~|sudo rm|chmod 777|:\\(\\)\\{ :\\|:\\& \\};:|> /dev/sda|mkfs)'; then echo 'BLOCKED: destructive shell pattern' >&2; exit 2; fi; if echo \"$CLAUDE_COMMAND\" | grep -qE '(^|[ ;&|])git[ ]+(reset[ ]+--hard|clean[ ]+-[a-z]*f|checkout[ ]+(--[ ]+)?\\.[ ]*$|restore[ ]+(--[ ]+)?\\.[ ]*$|push[ ]+(.*[ ])?(-f([ ]|$)|--force\\b)|branch[ ]+-D\\b|reflog[ ]+expire[ ]+--expire=now|gc[ ]+--prune=now)'; then echo 'BLOCKED: destructive git command — request explicit user confirmation' >&2; exit 2; fi"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/pre-bash-guard.sh\""
           }
         ]
       }
@@ -45,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if command -v godot >/dev/null 2>&1; then v=$(godot --version 2>/dev/null | head -1); echo \"godot: $v\"; case \"$v\" in 4.3*|4.4*|4.5*|4.6*) ;; 4.*) echo 'note: godot-superpowers targets 4.3+. Some skills (TileMapLayer, Parallax2D) require 4.3+.' ;; *) echo 'warn: Godot < 4.x detected. Use the gdscript-migrator agent.' ;; esac; else echo 'note: godot CLI not on PATH'; fi; if ! command -v gdformat >/dev/null 2>&1; then echo 'note: gdtoolkit not installed. pipx install gdtoolkit==4.*'; fi"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/session-start.sh\""
           }
         ]
       }

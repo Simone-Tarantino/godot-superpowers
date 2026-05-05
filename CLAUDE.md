@@ -14,14 +14,14 @@ Targets **Godot 4.3+**. All technical content tracks the official [Godot docs](h
 .
 ├── .claude-plugin/plugin.json    # plugin manifest — declares ONLY `skills` + `mcpServers`. `agents/` and `hooks/hooks.json` are picked up by Claude Code's plugin-mode convention, not by explicit fields here.
 ├── .claude-plugin/marketplace.json # marketplace listing (single-plugin marketplace) — version must stay in lock-step with plugin.json
-├── agents/                       # 13 subagents (auto-discovered when plugin-loaded)
-├── skills/                       # 29 skills (each <name>/SKILL.md) — declared via `skills` in plugin.json
+├── agents/                       # 15 subagents (auto-discovered when plugin-loaded)
+├── skills/                       # 33 skills (each <name>/SKILL.md) — declared via `skills` in plugin.json
 ├── hooks/hooks.json              # plugin-mode hooks file (mirror of `settings.json`'s `hooks` block); not referenced by plugin.json — Claude Code reads it by convention when the plugin is loaded
 ├── .mcp.json                     # recommended MCP servers — declared via `mcpServers` in plugin.json. Strict to the MCP schema: no `_tier` / `_purpose` annotations inline.
 ├── .claude-plugin/mcp-meta.json   # human-readable tier + purpose per MCP server (sidecar — keeps `.mcp.json` strict-schema-clean)
 ├── settings.json                 # drop-in mode source of truth: default permissions + hooks. The `hooks` block here is canonical and is mirrored to `hooks/hooks.json` by `scripts/sync-hooks.sh`.
 ├── settings.local.json           # MCP enables (gitignored on real projects); see `settings.local.json.example` for the template
-├── scripts/                      # repo tooling: sync-hooks.sh, validate.sh
+├── scripts/                      # repo tooling: sync-hooks.sh, validate.sh, hooks/*.sh (per-hook helpers invoked from settings.json)
 ├── LICENSE                       # MIT
 ├── README.md                     # plugin overview for end users
 └── CLAUDE.md                     # this file
@@ -33,7 +33,7 @@ When editing skills or agents in this directory:
 
 - **Skill bodies are end-user docs.** Be concrete: full code blocks, exact file paths, no abstract handwaving.
 - **Cite the official Godot doc URL** when explaining a non-obvious technical claim.
-- **Every skill that emits code must remind the user / Claude to verify the API via the `godot-docs` MCP before shipping the snippet.** Use the standard "Authoritative source" callout (one short blockquote near the top of the skill body) so the rule is visible inline, not buried in a footnote. The dispatcher (`using-godot-superpowers`) restates the same rule globally — keep them consistent.
+- **Every skill that emits code must remind the user / Claude to verify the API via the `godot-docs` MCP before shipping the snippet.** Use the standard "Authoritative source" callout (one short blockquote near the top of the skill body) so the rule is visible inline, not buried in a footnote. The dispatcher (`using-godot-superpowers`) is the canonical home of the rule and restates it globally. **Design-only skills that never emit Godot code MUST NOT carry the callout** — it wastes tokens and contradicts the documented policy. The exempt set: `game-brainstorming`, `writing-game-plan`, `gdd-writer`, `update-docs`, `codebase-survey`, `feature-spec`, `feature-plan`, `setup-git-godot`, `export-config` (plus the dispatcher itself). The validator enforces both presence (in code-emitting skills) and absence (in the exempt set).
 - **Frontmatter `description` is the discovery hook** — first sentence must contain the keywords a user would naturally use ("scaffold a player scene", "fix Godot 3 to 4 syntax", "configure collision layers").
 - **Keep skills self-contained.** Cross-references between skills are fine, but a skill should be useful read in isolation.
 - **English only.** Italian / other languages live in language packs (separate plugins).
@@ -57,7 +57,7 @@ scripts/validate.sh
 claude --plugin-dir /Users/you/Code/claude-gamedev /path/to/godot/project
 
 # 3. Or drop it in directly:
-cp -R agents skills hooks settings.json .mcp.json /path/to/godot/project/.claude/
+cp -R agents skills hooks scripts settings.json .mcp.json /path/to/godot/project/.claude/
 cp settings.local.json.example /path/to/godot/project/.claude/settings.local.json
 # settings.local.json is gitignored in this repo — copy from the tracked .example template
 ```
@@ -74,7 +74,8 @@ cp settings.local.json.example /path/to/godot/project/.claude/settings.local.jso
 | Hook | Trigger | Action |
 |------|---------|--------|
 | `PostToolUse Edit\|Write` | Any `.gd` file written | `gdformat` runs |
-| `PostToolUse Edit\|Write` | Any `.tscn` file written | `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` validates (only the first 5 lines of output are surfaced) |
+| `PostToolUse Edit\|Write` | Any `.tscn` file written | `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` validates; on non-zero exit, surfaces filtered error lines (grep `error\|corrupt\|failed\|missing\|cannot` with context, fallback to tail) |
+| `PostToolUse Edit\|Write` | Any `.tscn` / `.tres` written | `dep-integrity.sh` greps `[ext_resource ... path="res://..."]` and reports missing files (advisory, never fails the tool call) |
 | `PostToolUse Edit\|Write` | Any `.gd` / `.tscn` / `.tres` / `.gdshader` written (skipped inside subagents) | Prints `verifier: dispatch file-verifier on <N> file(s) [<paths>]` |
 | `Stop` | Claude finishes response | `gdlint` on `scripts/` and `autoload/` |
 | `PreToolUse Bash` | Any bash command | Blocks destructive patterns |
@@ -82,7 +83,23 @@ cp settings.local.json.example /path/to/godot/project/.claude/settings.local.jso
 
 Do not bypass these hooks (no `--no-verify`, no skipping format) without user request.
 
-## Skill catalog (29)
+**Note (PostToolUse spawn overhead):** the four PostToolUse hooks (`gdformat-gd.sh`, `check-tscn.sh`, `dep-integrity.sh`, `verifier-reminder.sh`) all bind to `matcher: "Edit|Write"` and therefore run on every write — including non-Godot files (markdown, JSON, YAML). Each script early-exits in the file-extension switch, but the shell spawn cost is not free. This is intentional: Claude Code's hook matcher does not currently support per-extension globs at the hook-config level, so filtering happens inside the script. If Claude Code adds path/extension matchers to hook configuration, prefer those to eliminate the spawn overhead.
+
+**Note (Stop gdlint coverage):** the `Stop` hook runs `gdlint` only against `scripts/` and `autoload/` if those directories exist. GDScript stored elsewhere (`src/`, `entities/`, `player/`, addon directories, project root) is NOT auto-linted on Stop. This is intentional to keep Stop output cheap. Projects with non-standard layouts can either (a) add their custom paths to `scripts/hooks/stop-gdlint.sh`, or (b) run `gdlint <path>` manually as part of pre-commit. The `code-reviewer` agent always lints whatever file it reviews regardless of path.
+
+**Hook environment variables**
+
+Claude Code sets these in the environment of every hook script. Honor them; do not invent new ones without updating this list.
+
+- `CLAUDE_FILE_PATHS` — comma-separated list of paths the tool wrote (PostToolUse Edit/Write).
+- `CLAUDE_PROJECT_DIR` — project root, absolute path.
+- `CLAUDE_COMMAND` — bash command being evaluated (PreToolUse Bash).
+- `CLAUDE_AGENT_NAME` — name of the active subagent if any; empty in main context.
+- `CLAUDE_SUBAGENT` — `1` when running inside a subagent, otherwise unset. Hooks that should fire only in main context (e.g. `verifier-reminder.sh`) gate on `CLAUDE_AGENT_NAME` non-empty OR `CLAUDE_SUBAGENT=1`.
+- `CLAUDE_PLUGIN_ROOT` — plugin install path; falls back to `$CLAUDE_PROJECT_DIR/.claude` in drop-in mode. Hook helpers resolve via `${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/<name>.sh`.
+- `CLAUDE_GIT_OVERRIDE` — if `1`, the git-guard's destructive-git block is skipped (the shell-pattern block still applies). Manual escape hatch — set per-command, never export globally.
+
+## Skill catalog (33)
 
 **Design gates** (auto-loaded; precede everything else):
 - `using-godot-superpowers` — auto-loaded dispatcher (`paths: ["**/*.gd", ...]`); enforces design-before-code + verifier-after-write rule; routes greenfield vs feature trail
@@ -91,15 +108,21 @@ Do not bypass these hooks (no `--no-verify`, no skipping format) without user re
 - `codebase-survey` — read-only map of files / APIs / hotspots a planned feature will touch on an existing project (feature trail, step 1)
 - `feature-spec` — approved survey → approved feature spec; design delta on top of GDD (feature trail, step 2)
 - `feature-plan` — approved feature spec → approved feature plan; hard-gates implementation skills (feature trail, step 3)
+
+**Execution / Orchestration**:
 - `subagent-dev-mode` — orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); keeps main-context tokens flat
 
 **Foundation** (run early in a project's life, AFTER plan approved):
 - `bootstrap-godot-project` — full directory + autoload scaffold
+- `setup-git-godot` — `.gitignore` + `.gitattributes` + Git LFS for binary assets
 - `godot-patterns` — Godot 4.x reference (auto-loads on `.gd`/`.tscn`)
 - `setup-collision-layers` — 11-layer scheme for 2D + 3D physics
 - `setup-input-map` — standard actions + remap UI
 - `setup-save-system` — Resource-based save/load
+- `save-schema-migration` — version save data + sequential migrations + fixture tests
 - `setup-localization` — CSV / gettext i18n, language switcher, font fallback
+- `ui-patterns-godot` — Theme + StyleBox, focus chain, `_unhandled_input` vs `_gui_input`, stretch/scale, accessibility floor
+- `networking-foundation` — High-Level Multiplayer patterns: ENet/WebSocket, `MultiplayerSpawner`/`Synchronizer`, `@rpc` annotations, authority model
 
 **Scaffolding** (one-off generation):
 - `create-scene` — scene templates: player / enemy / level / menu / HUD / inventory / dialogue
@@ -127,12 +150,14 @@ Do not bypass these hooks (no `--no-verify`, no skipping format) without user re
 - `genre-pack-3d-action` — SpringArm camera, lock-on, dodge roll, animation tree
 - `genre-pack-turnbased` — TurnManager, Action queue, deterministic RNG
 
-## Agent catalog (13)
+## Agent catalog (15)
 
 | Agent | Model | Use |
 |-------|-------|-----|
 | `orchestrator` | sonnet | Decompose milestone → parallel workers + verifier; never writes code itself |
 | `file-verifier` | haiku | External semantic check on a single Godot file after every Edit/Write; findings only |
+| `milestone-integrator` | sonnet | Post-batch integration gate: aggregate verifier + tests, smoke `--quit-after 1` (with `--check-only` fallback), flip plan status |
+| `merge-specialist` | sonnet | Repair `.tscn` / `.tres` after bad merges or refactors (conflict markers, broken IDs, UID drift) |
 | `code-reviewer` | sonnet | GDScript review against Godot 4.x best practices |
 | `scene-architect` | sonnet | `.tscn` hierarchies + collision layers |
 | `game-designer` | sonnet | Mechanics, balancing, level design |
@@ -153,6 +178,8 @@ Always invoke via `Agent` tool with `subagent_type: "<name>"`. Full table also i
 |---|---|
 | Just wrote `.gd` / `.tscn` / `.tres` / `.gdshader` | `file-verifier` (mandatory) |
 | Milestone with 3+ files or 2+ subsystems | `orchestrator` |
+| Milestone batch finished, confirm integration | `milestone-integrator` |
+| `.tscn` / `.tres` corrupted by merge or refactor | `merge-specialist` |
 | Scene tree / collision layout design | `scene-architect` |
 | GDScript review / API drift check | `code-reviewer` |
 | GUT / GdUnit4 tests, pre-release QA | `qa-tester` |
@@ -192,7 +219,7 @@ This plugin can be:
 
 1. **Installed via Claude Code marketplace** (once published) — namespaced as `/godot-superpowers:<skill>`
 2. **Loaded locally** — `claude --plugin-dir /path/to/godot-superpowers`
-3. **Copied as `.claude/`** — drop `agents/`, `skills/`, `hooks/`, `settings.json`, `.mcp.json` into a project's `.claude/` directory, plus `settings.local.json.example` copied as `.claude/settings.local.json` (the source file is gitignored here, so the tracked `.example` is the install template). The template uses an explicit `enabledMcpjsonServers` whitelist (tier 1 only by default); tier 2 servers (`git`, `memory`) are opt-in. Without `settings.local.json`, `.mcp.json` is declarative-only and no server starts. Keep `settings.local.json` gitignored on real projects (per-user state).
+3. **Copied as `.claude/`** — drop `agents/`, `skills/`, `hooks/`, `scripts/`, `settings.json`, `.mcp.json` into a project's `.claude/` directory, plus `settings.local.json.example` copied as `.claude/settings.local.json` (the source file is gitignored here, so the tracked `.example` is the install template). Hooks resolve their helper scripts via `${CLAUDE_PLUGIN_ROOT:-$CLAUDE_PROJECT_DIR/.claude}/scripts/hooks/<name>.sh`, which works in both plugin mode and drop-in mode — but the `scripts/` directory MUST be copied alongside the others. The template uses an explicit `enabledMcpjsonServers` whitelist (tier 1 only by default); tier 2 servers (`git`, `memory`) are opt-in. Without `settings.local.json`, `.mcp.json` is declarative-only and no server starts. Keep `settings.local.json` gitignored on real projects (per-user state).
 
 When copied as `.claude/` (option 3), skills are NOT namespaced — invoked as `/<skill>` directly.
 

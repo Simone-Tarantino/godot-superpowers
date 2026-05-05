@@ -153,7 +153,8 @@ signal target_changed(new_target: Node3D)
 var current_target: Node3D
 
 
-func _input(event: InputEvent) -> void:
+# Use _unhandled_input so UI captures take precedence over gameplay actions.
+func _unhandled_input(event: InputEvent) -> void:
     if event.is_action_pressed("lock_on"):
         if current_target:
             _set_target(null)

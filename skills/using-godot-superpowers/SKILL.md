@@ -18,6 +18,8 @@ Use this table FIRST. It maps situation → exact `Agent` tool call. Always invo
 |---|---|---|
 | Just wrote / edited a `.gd` `.tscn` `.tres` `.gdshader` | `file-verifier` | Mandatory after every write — Haiku, isolated, returns findings only |
 | Implementing milestone with 3+ files or 2+ subsystems | `orchestrator` | Decomposes, dispatches workers + verifier in parallel, keeps main context flat |
+| Milestone batch finished — confirm integration before declaring done | `milestone-integrator` | Aggregates verifier verdicts + tests, runs `--quit-after 1` smoke on main scene (with `--check-only` fallback), flips plan status |
+| `.tscn` / `.tres` corrupted by merge or refactor (broken IDs / UIDs / `<<<<<<<` markers) | `merge-specialist` | Repair scene grammar, dedupe ids, fix paths, restore UIDs from git — text repair, not redesign |
 | Designing scene tree / collision layout / node hierarchy | `scene-architect` | `.tscn` structure + layer math without writing scripts |
 | Reviewing GDScript for quality / API drift / conventions | `code-reviewer` | Sonnet review against Godot 4.x best practices |
 | Writing GUT / GdUnit4 tests, pre-release checklist | `qa-tester` | Test scaffolding + coverage gaps |
@@ -67,6 +69,18 @@ For any code you are about to emit, especially when called from another skill:
 
 When `context7` is available it is a useful secondary source for ecosystem libraries (gdtoolkit, GUT, GdUnit4, Phantom Camera, Dialogic, Beehave, LimboAI), but `godot-docs` MCP wins for engine APIs.
 
+### Which MCP for which job
+
+The plugin exposes both `godot-mcp` and `godot-docs`. They do different things — pick the right one:
+
+| Need | Server | Why |
+|------|--------|-----|
+| Class names, method signatures, signal payloads, enum values, default args, version availability of a Godot 4.x API | `godot-docs` | Authoritative engine documentation. Always preferred for code emission. |
+| Run a scene headless / inspect a running project / read or edit `project.godot` and `.tscn` / list nodes / autoloads | `godot-mcp` | Editor + project automation. Use during scaffolding, debugging, or when verifying a real project's state instead of guessing. |
+| Library docs (gdtoolkit, GUT, GdUnit4, Phantom Camera, Dialogic, Beehave, LimboAI, third-party addons) | `context7` | Ecosystem coverage; not engine APIs. |
+
+If both `godot-mcp` and `godot-docs` could plausibly answer (e.g. "what does `CharacterBody2D.move_and_slide` return?"), **prefer `godot-docs`** — it is the single source of truth for engine APIs. Reach for `godot-mcp` only when you need to *act on* or *read from* the user's actual project, not the docs.
+
 ## The verification rule (after every write to a Godot source file)
 
 > **After any `Edit` / `Write` to `.gd`, `.tscn`, `.tres`, or `.gdshader`, dispatch the `file-verifier` agent on that exact path before considering the change done.** Do not re-read the file in main context — the verifier reads it fresh and returns findings only.
@@ -85,22 +99,28 @@ If the user asks you to **start something creative** in a Godot project — new 
 
 - `bootstrap-godot-project`
 - `create-scene`, `create-component`, `create-state-machine`, `create-resource`, `create-autoload`
-- `setup-collision-layers`, `setup-input-map`, `setup-save-system`, `setup-localization`
+- `setup-collision-layers`, `setup-input-map`, `setup-save-system`, `setup-localization`, `save-schema-migration`
+- `ui-patterns-godot`, `networking-foundation`, `setup-git-godot`
 - `genre-pack-platformer`, `genre-pack-topdown`, `genre-pack-3d-action`, `genre-pack-turnbased`
 - `shader-writer`, `sfx-generator`, `export-config`
+
+The list above is illustrative, not exhaustive. Any skill that introduces game behavior, infrastructure, or persistent project layout (autoloads, layers, schemas, network code, repo configuration) requires the gate. When in doubt, gate.
 
 There are two trails. Pick exactly one based on whether the project already has Godot source files.
 
 **Trail A — greenfield (no `project.godot` yet, or whole-game redesign):**
 
-1. `game-brainstorming` → produces an approved GDD at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` (via `gdd-writer`).
-2. `writing-game-plan` → produces an approved plan at `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`.
+1. `game-brainstorming` → conducts the structured Q&A.
+2. `gdd-writer` → produces an approved GDD at `docs/design/<YYYY-MM-DD>-<slug>-gdd.md`.
+3. `writing-game-plan` → produces an approved plan at `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`.
 
 **Trail B — feature on an existing game (`project.godot` exists, change is bounded):**
 
 1. `codebase-survey` → produces a read-only file/API/hotspot map at `docs/features/<YYYY-MM-DD>-<slug>-survey.md` (skippable for trivial one-file changes).
 2. `feature-spec` → produces an approved feature spec at `docs/features/<YYYY-MM-DD>-<slug>-feature.md`.
 3. `feature-plan` → produces an approved feature plan at `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`.
+
+> **Trivial-feature shortcut.** Step 1 (`codebase-survey`) may be skipped if and only if ALL three hold: (a) the change touches exactly one file, (b) it adds no new mechanic, (c) it adds no new public surface (no new signal, exported var, autoload, or input action). When skipped, the spec header MUST contain the canonical marker string `Survey reference: none (trivial shortcut)` exactly — `feature-plan` keys off this string. If any condition fails, the survey is mandatory. See [`codebase-survey`](../codebase-survey/SKILL.md) and [`feature-spec`](../feature-spec/SKILL.md) for the canonical rule.
 
 Both trails end in an approved plan file. Both gates must clear before implementation. The `orchestrator` agent enforces the same precondition on dispatch — it refuses to run until the matching plan is `Status: Approved`.
 
@@ -162,7 +182,8 @@ These thoughts mean you are about to skip the gate. Stop.
 2. Decide: design work or maintenance? (See "When the rule does/doesn't apply".)
 3. If design, pick the trail by checking whether the project already has Godot source files:
    - **Trail A — greenfield** (no `project.godot`, or whole-game redesign):
-     - Invoke `game-brainstorming`. Wait for GDD approval.
+     - Invoke `game-brainstorming`. Run the structured Q&A.
+     - Invoke `gdd-writer`. Wait for GDD approval.
      - Invoke `writing-game-plan`. Wait for plan approval.
    - **Trail B — feature on existing game** (`project.godot` exists, change is bounded):
      - Invoke `codebase-survey`. Produces `docs/features/<date>-<slug>-survey.md`.

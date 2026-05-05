@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Bash
 argument-hint: [target-platform: win | mac | linux | web | android | ios | all]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Export Config
 
 Configure Godot exports cleanly for distribution. Reference: [Exporting projects](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html).
@@ -170,18 +168,64 @@ Before any release export:
 - [ ] No shaders that crash on the lowest-spec target hardware
 - [ ] Test build runs on a clean machine (not just dev box)
 
-## CI build (GitHub Actions)
+## CI pipeline (GitHub Actions)
 
-`.github/workflows/build.yml`:
+A real release pipeline runs **tests first**, then exports. A failing test must block the build, otherwise CI is just an expensive `godot --export`. The template below has two jobs: `test` (runs GUT or GdUnit4 headless on every push) and `build` (only on tags, only after `test` passes).
+
+Reference: [Command line tutorial → Running scripts](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html). Verify the exact `--script` / `--scene` flags against `godot-docs` MCP for your Godot version before shipping the workflow.
+
+### `.github/workflows/ci.yml` — tests + builds
 
 ```yaml
-name: Build
+name: CI
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [main]
+
+env:
+  GODOT_VERSION: 4.4.1   # bump in lockstep with project.godot config/features
 
 jobs:
+  test:
+    name: Headless tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true   # required if setup-git-godot is in use
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+      - name: Import resources (warm .godot cache)
+        run: godot --headless --import || true
+      # GUT runner — preferred when addons/gut/ is present.
+      # If the project uses GdUnit4 instead, swap the next step for:
+      #   godot --headless --path . res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://test
+      - name: Run GUT tests
+        run: |
+          godot --headless --path . \
+            -s addons/gut/gut_cmdln.gd \
+            -gdir=res://test/unit \
+            -gexit \
+            -glog=2
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: |
+            user_data/logs/*.log
+            test-results.xml
+          if-no-files-found: ignore
+
   build:
+    name: Export ${{ matrix.preset }}
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
         include:
@@ -191,26 +235,59 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
       - uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.4.1
+          version: ${{ env.GODOT_VERSION }}
           use-dotnet: false
+      - name: Install export templates
+        run: godot --headless --quit --install-export-templates || true
       - name: Import resources
         run: godot --headless --import || true
-      - name: Export
+      - name: Export ${{ matrix.preset }}
         run: |
-          mkdir -p $(dirname "${{ matrix.output }}")
+          mkdir -p "$(dirname '${{ matrix.output }}')"
           godot --headless --path . --export-release "${{ matrix.preset }}" "${{ matrix.output }}"
         shell: bash
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}-${{ github.ref_name }}
           path: ${{ matrix.output }}
 ```
 
-Tag `v1.2.3` → builds for all three desktop platforms upload as artifacts.
+### What the workflow guarantees
 
-For mobile/web, use platform-specific runners (macOS for iOS, Linux for Android signing).
+- `test` runs on every push **and** every PR — fast feedback.
+- `build` only runs on tag pushes (`v1.2.3`) and only **after `test` passes** (`needs: test`).
+- `lfs: true` in `actions/checkout` pulls Git LFS blobs (required if [`setup-git-godot`](../setup-git-godot/SKILL.md) is configured; otherwise binary assets resolve to LFS pointer text and the export fails with cryptic errors).
+- `godot --headless --import` warms the `.godot/` cache so the export step does not stall on first-run import.
+- Artifacts are tagged with `github.ref_name` (the tag) so consecutive releases do not overwrite each other.
+
+### Required secrets / env
+
+| Secret | When | What for |
+|--------|------|----------|
+| `GODOT_ANDROID_KEYSTORE_BASE64` | Android release | Base64 of the `.keystore` (decoded into a temp file by an extra step) |
+| `GODOT_ANDROID_KEYSTORE_PASSWORD` | Android release | Keystore password |
+| `GODOT_ANDROID_KEY_ALIAS` | Android release | Key alias inside the keystore |
+| `GODOT_MACOS_NOTARY_APPLE_ID` | macOS release | Apple ID for `xcrun notarytool` |
+| `GODOT_MACOS_NOTARY_TEAM_ID` | macOS release | Team ID |
+| `GODOT_MACOS_NOTARY_APP_PASSWORD` | macOS release | App-specific password |
+| `ITCH_API_KEY` | Web/desktop release if pushing to itch | `butler push` auth |
+
+Inject these into the build job via `env:` and reference them in the matching `[preset.N.options]` keys (e.g. `keystore/release` paths) **only at runtime** — never commit them.
+
+### Common CI gotchas
+
+- **"Cannot import: file is corrupt"** on a binary asset → almost always a missing LFS pull. Check `actions/checkout` has `lfs: true` and the runner ran `git lfs pull`.
+- **"Could not find export template"** → `--install-export-templates` may need a network call. Some self-hosted runners block it; pre-bake the template into the runner image.
+- **Android signing fails silently** → the keystore path in `export_presets.cfg` is still the dev-machine absolute path. Override with `keystore/release="$RUNNER_TEMP/release.keystore"` after decoding the secret.
+- **macOS export hangs forever** on a Linux runner → `macOS` preset must be exported on a `macos-latest` runner; cross-export only works for desktop Linux/Windows.
+- **Rate-limited template download** when many parallel jobs hit GitHub mirrors → pin `chickensoft-games/setup-godot` to a release that caches templates.
+
+For mobile/web releases, use platform-specific runners (macOS for iOS, Linux for Android signing).
 
 ## Common gotchas
 

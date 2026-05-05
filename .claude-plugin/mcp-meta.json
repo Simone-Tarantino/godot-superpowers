@@ -1,5 +1,10 @@
 {
   "comment": "Sidecar metadata for .mcp.json. Documents tier and purpose per server without injecting non-standard fields into the MCP config consumed by Claude Code. Authoritative tier table also lives in README.md (\"MCP servers\" section).",
+  "pinning_policy": {
+    "strategy": "floating",
+    "rationale": "Plugin is redistributed; strict pins age out fast. `npx -y` / `uvx` always fetch the latest published version. Trade-off: drift possible between installs.",
+    "review_cadence": "quarterly"
+  },
   "servers": {
     "godot-mcp": {
       "tier": 1,

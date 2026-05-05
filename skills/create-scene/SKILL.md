@@ -73,37 +73,77 @@ func _ready() -> void:
 
 Script: set `velocity`, call `move_and_slide()`. Camera: rotate `CameraPivot` from mouse/stick.
 
-### `2d-enemy` / `3d-enemy`
+### `2d-enemy`
 
 ```
-{Name} (CharacterBody2D | CharacterBody3D)
-├── Sprite2D | MeshInstance3D
-├── CollisionShape2D | CollisionShape3D
-├── Hurtbox (Area)               -> EnemyHurtbox layer
-├── Hitbox (Area)                -> EnemyHitbox layer
+{Name} (CharacterBody2D)
+├── Sprite2D
+├── CollisionShape2D
+├── Hurtbox (Area2D)             -> EnemyHurtbox layer
+│   └── CollisionShape2D
+├── Hitbox (Area2D)              -> EnemyHitbox layer
+│   └── CollisionShape2D
 ├── HealthComponent
 ├── StateMachine                 -> Patrol, Chase, Attack, Stunned
-├── DetectionArea (Area)         -> sees player
-├── NavigationAgent (2D or 3D)
+├── DetectionArea (Area2D)       -> sees player
+├── NavigationAgent2D
+└── AnimationPlayer
+```
+
+### `3d-enemy`
+
+```
+{Name} (CharacterBody3D)
+├── MeshInstance3D
+├── CollisionShape3D
+├── Hurtbox (Area3D)             -> EnemyHurtbox layer
+│   └── CollisionShape3D
+├── Hitbox (Area3D)              -> EnemyHitbox layer
+│   └── CollisionShape3D
+├── HealthComponent
+├── StateMachine                 -> Patrol, Chase, Attack, Stunned
+├── DetectionArea (Area3D)       -> sees player
+├── NavigationAgent3D
 └── AnimationPlayer
 ```
 
 ### `level` — generic level/world container
 
+#### `level` (2D)
+
 ```
-{Name}Level (Node2D | Node3D)
+{Name}Level (Node2D)
 ├── World
-│   ├── TileMapLayer (2D) | GridMap (3D)
-│   ├── StaticBody / collision
-│   └── NavigationRegion (2D or 3D)
+│   ├── TileMapLayer
+│   ├── StaticBody2D / collision
+│   └── NavigationRegion2D
 ├── Entities (Node)
-│   ├── PlayerSpawn (Marker2D | Marker3D)
+│   ├── PlayerSpawn (Marker2D)
 │   ├── EnemySpawns (Node)
 │   └── Pickups (Node)
-├── Triggers (Node)              -> Area-based events
+├── Triggers (Node)              -> Area2D-based events
 ├── HUD (CanvasLayer)
 │   └── ...
-├── DirectionalLight3D / WorldEnvironment (3D only)
+└── Music (AudioStreamPlayer)
+```
+
+#### `level` (3D)
+
+```
+{Name}Level (Node3D)
+├── World
+│   ├── GridMap
+│   ├── StaticBody3D / collision
+│   └── NavigationRegion3D
+├── Entities (Node)
+│   ├── PlayerSpawn (Marker3D)
+│   ├── EnemySpawns (Node)
+│   └── Pickups (Node)
+├── Triggers (Node)              -> Area3D-based events
+├── HUD (CanvasLayer)
+│   └── ...
+├── DirectionalLight3D
+├── WorldEnvironment
 └── Music (AudioStreamPlayer)
 ```
 

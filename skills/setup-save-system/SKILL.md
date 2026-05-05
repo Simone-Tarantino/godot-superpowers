@@ -56,6 +56,15 @@ signal save_finished(slot: int, ok: bool)
 signal load_started(slot: int)
 signal load_finished(slot: int, ok: bool)
 
+# Cumulative play time across sessions. Previous form `Time.get_ticks_msec() / 1000.0`
+# resets to engine-boot every save, throwing away prior sessions.
+var _play_time_accum: float = 0.0
+var _session_start_msec: int = 0
+
+
+func _ready() -> void:
+    _session_start_msec = Time.get_ticks_msec()
+
 
 func save_game(slot: int) -> bool:
     save_started.emit(slot)
@@ -63,7 +72,10 @@ func save_game(slot: int) -> bool:
     var data := SaveData.new()
     data.version = VERSION
     data.timestamp = Time.get_unix_time_from_system()
-    data.play_time_seconds = float(Time.get_ticks_msec()) / 1000.0
+    var now_msec: int = Time.get_ticks_msec()
+    _play_time_accum += float(now_msec - _session_start_msec) / 1000.0
+    _session_start_msec = now_msec
+    data.play_time_seconds = _play_time_accum
     data.current_scene = get_tree().current_scene.scene_file_path if get_tree().current_scene else ""
     for node in get_tree().get_nodes_in_group("persist"):
         if node.has_method("save_data"):
@@ -86,9 +98,13 @@ func load_game(slot: int) -> bool:
         return false
     if data.version != VERSION:
         data = _migrate(data)
+    _play_time_accum = data.play_time_seconds
+    _session_start_msec = Time.get_ticks_msec()
     if data.current_scene != "" and data.current_scene != get_tree().current_scene.scene_file_path:
         await get_tree().create_timer(0.0).timeout  # let frame settle
-        get_tree().change_scene_to_file(data.current_scene)
+        # Dynamic path from save → load() + change_scene_to_packed(); use preload() for static paths.
+        var packed: PackedScene = load(data.current_scene) as PackedScene
+        get_tree().change_scene_to_packed(packed)
         await get_tree().process_frame
     for node in get_tree().get_nodes_in_group("persist"):
         var entry: Variant = data.entries.get(node.get_path())

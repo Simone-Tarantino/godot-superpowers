@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: <path-to-feature-spec>
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Feature Plan
 
 Converts an approved feature spec into an actionable, milestone-based implementation plan that uses the godot-superpowers skill catalog as building blocks. Counterpart of `writing-game-plan` for **changes on top of existing code**.
@@ -80,7 +78,7 @@ Three tables — every file the feature creates, edits, or deletes. The survey i
 | Path | Skill that produces it | Acceptance ref |
 |------|-------------------------|-----------------|
 | `scripts/components/double_jump_component.gd` | `create-component` | AC #1, #2 |
-| `tests/unit/test_double_jump_component.gd` | `gut-test-writer` | AC #1, #2, #3 |
+| `test/unit/test_double_jump_component.gd` | `gut-test-writer` | AC #1, #2, #3 |
 
 **Files: edit**
 
@@ -116,7 +114,7 @@ Each milestone is a **demo-able checkpoint**. Number them M0, M1, …. For small
 **Deliverables**:
 - `scripts/components/double_jump_component.gd`
 - Edit: `scripts/player/player.gd`
-- `tests/unit/test_double_jump_component.gd`
+- `test/unit/test_double_jump_component.gd`
 
 **Risks**:
 - Existing jump tests may assert exact `velocity.y` after first jump — verify.

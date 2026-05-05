@@ -22,7 +22,7 @@ Skills then namespaced as `/godot-superpowers:<skill-name>`.
 ```bash
 TARGET=/path/to/godot/project/.claude
 mkdir -p "$TARGET"
-cp -R agents skills hooks settings.json .mcp.json "$TARGET"/
+cp -R agents skills hooks scripts settings.json .mcp.json "$TARGET"/
 cp settings.local.json.example "$TARGET"/settings.local.json
 ```
 
@@ -30,7 +30,7 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 
 ## What you get
 
-### 29 skills
+### 33 skills
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
@@ -40,13 +40,17 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 |  | `codebase-survey` | Read-only map of files / APIs / hotspots a planned feature will touch on an existing project |
 |  | `feature-spec` | Approved survey → approved feature spec (design delta on top of GDD) |
 |  | `feature-plan` | Approved feature spec → approved feature plan (hard-gates implementation) |
-|  | `subagent-dev-mode` | Orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); flat main-context tokens |
+| **Execution / Orchestration** | `subagent-dev-mode` | Orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); flat main-context tokens |
 | **Foundation** | `bootstrap-godot-project` | Scaffold full directory layout + base autoloads |
+|  | `setup-git-godot` | `.gitignore` + `.gitattributes` + Git LFS for binary assets |
 |  | `godot-patterns` | Godot 4.x reference (auto-loaded on `.gd`/`.tscn`) |
 |  | `setup-collision-layers` | 11-layer scheme for 2D + 3D physics (player, enemies, environment, projectiles, pickups, triggers, hurtboxes, hitboxes) |
 |  | `setup-input-map` | Standard actions + remap UI |
 |  | `setup-save-system` | Resource-based save/load |
+|  | `save-schema-migration` | Version save data + sequential migrations + fixture tests |
 |  | `setup-localization` | CSV / gettext i18n, language switcher, font fallback |
+|  | `ui-patterns-godot` | Theme + StyleBox, focus chain, `_unhandled_input` vs `_gui_input`, stretch/scale, accessibility floor |
+|  | `networking-foundation` | High-Level Multiplayer patterns: ENet/WebSocket, MultiplayerSpawner/Synchronizer, `@rpc` + authority |
 | **Scaffolding** | `create-scene` | 2D/3D scene templates: player, enemy, level, main menu, pause menu, HUD, inventory UI, dialogue UI |
 |  | `create-component` | HealthComponent, Hurtbox, Hitbox, etc. |
 |  | `create-state-machine` | Node-based state machine + states |
@@ -64,12 +68,14 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 |  | `genre-pack-3d-action` | SpringArm camera, lock-on, dodge roll, animation tree |
 |  | `genre-pack-turnbased` | TurnManager, action queue, deterministic RNG |
 
-### 13 subagents
+### 15 subagents
 
 | Agent | Model | Use |
 |-------|-------|-----|
 | `orchestrator` | sonnet | Decompose milestone → parallel workers + verifier; never writes code itself |
 | `file-verifier` | haiku | External semantic check on a single Godot file after every Edit/Write; findings only |
+| `milestone-integrator` | sonnet | Post-batch integration gate: aggregate verifier + tests, smoke `--quit-after 1` (with `--check-only` fallback), flip plan status |
+| `merge-specialist` | sonnet | Repair `.tscn` / `.tres` after bad merges or refactors (conflict markers, broken IDs, UID drift) |
 | `code-reviewer` | sonnet | GDScript review against Godot 4.x best practices |
 | `scene-architect` | sonnet | Design `.tscn` hierarchies + collision layers |
 | `game-designer` | sonnet | Mechanics, balancing, level design |
@@ -85,7 +91,8 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 ### Hooks
 
 - **PostToolUse** Edit/Write `.gd` → `gdformat`
-- **PostToolUse** Edit/Write `.tscn` → `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` validation (first 5 lines of output surfaced)
+- **PostToolUse** Edit/Write `.tscn` → `godot --headless --check-only --path "$CLAUDE_PROJECT_DIR" <file>` validation (on non-zero exit, surfaces filtered error lines — `error|corrupt|failed|missing|cannot` with context — falling back to the tail of the output)
+- **PostToolUse** Edit/Write `.tscn` / `.tres` → dependency-integrity check (greps `[ext_resource ... path="res://..."]` and reports missing references; advisory)
 - **PostToolUse** Edit/Write `.gd`/`.tscn`/`.tres`/`.gdshader` → prints `verifier: dispatch file-verifier on <N> file(s) [<paths>]` (skipped inside subagents)
 - **Stop** → `gdlint` on `scripts/` and `autoload/`
 - **PreToolUse** Bash → block destructive patterns
@@ -103,6 +110,14 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 | `pixellab`, `comfyui` | tier 3 (external) | **no** | Image generation — referenced by `art-director` if installed |
 
 **Tier 3 servers are optional external integrations.** They are NOT shipped in `.mcp.json` because their npm packages, API keys, and self-hosted backends vary per user. To enable them, add the server stanza to your project's `.mcp.json` (or to `~/.claude.json` globally) and provide the relevant credentials. The `sound-designer` and `art-director` agents detect availability at runtime and fall back to placeholders / free CC0 sources when the MCP is absent.
+
+#### Version pinning policy
+
+`.mcp.json` uses **floating versions** — `npx -y <package>` and `uvx <package>` without semver pins. Each install fetches whatever the registry currently considers latest.
+
+- **Why floating:** the plugin is redistributed across many downstream projects; hard-pinned versions age out and ship known-broken upstreams to new users. Floating tracks upstream stability.
+- **Risk:** behavioral drift between installs. Two users running the same plugin version may bind to different MCP server builds depending on when they installed.
+- **Mitigation:** review `.mcp.json` quarterly; if a server breaks, lock the offending package inline as `package@x.y.z` in `.mcp.json` (or your project's override) until upstream is fixed. The policy is recorded under `pinning_policy` in `.claude-plugin/mcp-meta.json` — that file is also the human-readable source of truth for per-server tier and purpose annotations (kept out of `.mcp.json` so it stays strict-MCP-schema-clean).
 
 ## Conventions enforced
 
@@ -124,6 +139,16 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 - Godot **4.3+**
 - [`gdtoolkit`](https://github.com/Scony/godot-gdscript-toolkit) 4.x — `pipx install gdtoolkit==4.*`
 - Claude Code 1.x or compatible
+
+## Portability across clients
+
+The skills and agents are written against the Claude Code tool surface (Anthropic's official CLI). The _content_ (markdown bodies, design rules, code recipes) is portable; only the tool-name vocabulary changes per host:
+
+- **Claude Code** — uses `Agent` (with `subagent_type`) for subagent dispatch, `Bash` / `Read` / `Edit` / `Write` for shell + files. This is the reference surface every skill is written against.
+- **Copilot CLI** — exposes a `skill` primitive that auto-discovers installed plugin skills (functionally equivalent to Claude Code's `Skill` tool). Other tool names approximate the Claude Code surface; consult the official Copilot CLI docs for the current tool list.
+- **Cursor / Codex / other agentic IDEs** — provide their own task / agent / file-edit primitives. There is no canonical 1:1 mapping and the names drift release-to-release; consult the host's current docs and substitute the equivalent primitive when reading skill bodies.
+
+Hooks (`hooks/hooks.json`, `settings.json`) and the MCP server wiring (`.mcp.json`) are Claude Code conventions and **do not transfer 1:1** to other clients — they may be ignored, partially honored, or need rework depending on host.
 
 ## License
 

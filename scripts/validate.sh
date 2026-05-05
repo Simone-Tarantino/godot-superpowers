@@ -56,6 +56,28 @@ else
     fail=1
 fi
 
+# Skills exempt from the `allowed-tools` requirement (intentional design):
+#   - using-godot-superpowers: auto-loaded dispatcher (paths-based trigger)
+#   - subagent-dev-mode: orchestration that invokes Agent across the full toolset
+#   - game-brainstorming: hard-gate skill where allowed-tools caused interaction issues
+ALLOWED_TOOLS_EXEMPT=(using-godot-superpowers subagent-dev-mode game-brainstorming)
+
+# Skills that never emit Godot 4.x API code (design / docs / config-only).
+# Single source of truth for both the callout-presence skip and the
+# callout-absence enforcement loops below.
+DESIGN_ONLY_SKILLS=(game-brainstorming writing-game-plan gdd-writer update-docs codebase-survey feature-spec feature-plan setup-git-godot export-config)
+
+# Helper: return 0 if $1 is in array named $2.
+_in_array() {
+    local needle="$1" arr_name="$2"
+    eval "local arr=( \"\${${arr_name}[@]}\" )"
+    local v
+    for v in "${arr[@]}"; do
+        [ "$v" = "$needle" ] && return 0
+    done
+    return 1
+}
+
 echo "== Skill frontmatter =="
 for f in skills/*/SKILL.md; do
     if ! head -1 "$f" | grep -q '^---$'; then
@@ -68,9 +90,17 @@ for f in skills/*/SKILL.md; do
     if [ -z "$name" ] || [ -z "$desc" ]; then
         echo "  FAIL $f missing name or description"
         fail=1
-    else
-        echo "  OK  $f"
+        continue
     fi
+    # `allowed-tools` required unless skill is on the exempt list.
+    if ! _in_array "$name" ALLOWED_TOOLS_EXEMPT; then
+        if ! awk '/^---$/{c++; next} c==1 && /^allowed-tools:/{found=1; exit} END{exit !found}' "$f"; then
+            echo "  FAIL $f missing allowed-tools (not in exempt list)"
+            fail=1
+            continue
+        fi
+    fi
+    echo "  OK  $f"
 done
 
 echo "== Agent frontmatter =="
@@ -93,25 +123,50 @@ echo "== Catalog count drift (docs ↔ filesystem) =="
 real_skills=$(find skills -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
 real_agents=$(ls agents/*.md 2>/dev/null | wc -l | tr -d ' ')
 
-# Match `<number> <noun>` and verify the number equals expected
-check_count() {
-    local file="$1" expected="$2" noun="$3"
-    while IFS=: read -r lineno content; do
-        n=$(echo "$content" | grep -oE "[0-9]+ $noun\b" | grep -oE '[0-9]+' | head -1)
-        if [ -n "$n" ] && [ "$n" != "$expected" ]; then
-            echo "  FAIL $file:$lineno claims $n $noun, real is $expected"
-            fail=1
-        fi
-    done < <(grep -nE "[0-9]+ $noun\b" "$file" 2>/dev/null || true)
+# Anchored count check: only verify counts at canonical positions, not anywhere
+# in prose. The anchor regex MUST contain a single capture group `([0-9]+)`
+# enclosed in surrounding context — sed extracts that group and compares it.
+check_count_anchored() {
+    local file="$1" anchor_re="$2" expected="$3" label="$4"
+    if [ ! -f "$file" ]; then
+        echo "  FAIL $file missing (count anchor: $label)"
+        fail=1
+        return
+    fi
+    local line n=""
+    line=$(grep -E "$anchor_re" "$file" | head -1)
+    if [ -z "$line" ]; then
+        echo "  FAIL $file: no line matches anchor /$anchor_re/ ($label)"
+        fail=1
+        return
+    fi
+    # Bash regex captures the (...) group from the anchor — delimiter-free.
+    if [[ "$line" =~ $anchor_re ]]; then
+        n="${BASH_REMATCH[1]}"
+    fi
+    if [ -z "$n" ]; then
+        echo "  FAIL $file: anchor /$anchor_re/ matched but capture group empty ($label)"
+        fail=1
+        return
+    fi
+    if [ "$n" != "$expected" ]; then
+        echo "  FAIL $file: $label claims $n, real is $expected"
+        fail=1
+    fi
 }
 
 drift_before=$fail
-check_count CLAUDE.md "$real_skills" "skills"
-check_count CLAUDE.md "$real_agents" "subagents"
-check_count README.md "$real_skills" "skills"
-check_count README.md "$real_agents" "subagents"
-check_count .claude-plugin/marketplace.json "$real_skills" "skills"
-check_count .claude-plugin/marketplace.json "$real_agents" "subagents"
+# CLAUDE.md: tree comments + catalog headers
+check_count_anchored CLAUDE.md '├── agents/[^#]*# ([0-9]+) subagents'  "$real_agents" "tree comment (agents)"
+check_count_anchored CLAUDE.md '├── skills/[^#]*# ([0-9]+) skills'     "$real_skills" "tree comment (skills)"
+check_count_anchored CLAUDE.md '## Skill catalog \(([0-9]+)\)'         "$real_skills" "Skill catalog header"
+check_count_anchored CLAUDE.md '## Agent catalog \(([0-9]+)\)'         "$real_agents" "Agent catalog header"
+# README.md: H3 headers
+check_count_anchored README.md '### ([0-9]+) skills'                  "$real_skills" "skills H3 header"
+check_count_anchored README.md '### ([0-9]+) subagents'               "$real_agents" "subagents H3 header"
+# marketplace.json: description prefix
+check_count_anchored .claude-plugin/marketplace.json '"description": "([0-9]+) skills,' "$real_skills" "description (skills)"
+check_count_anchored .claude-plugin/marketplace.json 'skills, ([0-9]+) subagents,'      "$real_agents" "description (subagents)"
 
 if [ "$fail" = "$drift_before" ]; then
     echo "  OK  CLAUDE.md / README.md / marketplace.json claim $real_skills skills + $real_agents subagents"
@@ -132,21 +187,23 @@ done
 
 echo "== Authoritative source callout coverage =="
 missing=()
-# Code-emitting skills must carry the standard callout
+# Code-emitting skills must carry the standard callout. Skip set:
+#   - DESIGN_ONLY_SKILLS (design / docs / config-only — never emit Godot API)
+#   - using-godot-superpowers (the dispatcher itself — canonical home of the rule)
 for f in skills/*/SKILL.md; do
     name=$(basename "$(dirname "$f")")
-    case "$name" in
-        game-brainstorming|writing-game-plan|gdd-writer|update-docs|using-godot-superpowers|codebase-survey|feature-spec|feature-plan) continue ;;  # design / docs only
-    esac
+    if [ "$name" = "using-godot-superpowers" ] || _in_array "$name" DESIGN_ONLY_SKILLS; then
+        continue
+    fi
     if ! grep -q '\*\*Authoritative source\*\*' "$f"; then
         missing+=("$f")
     fi
 done
 for f in agents/*.md; do
-    name=$(basename "$f" .md)
-    case "$name" in
-        addon-curator|export-engineer|playtest-analyst|game-designer) ;; # still emit examples — keep checked
-    esac
+    # No agent is exempt from the callout: addon-curator, export-engineer,
+    # playtest-analyst, and game-designer all cite class names or example
+    # snippets and must carry the rule. Mirror the skill loop above without
+    # any skip cases.
     if ! grep -q '\*\*Authoritative source\*\*' "$f"; then
         missing+=("$f")
     fi
@@ -156,6 +213,27 @@ if [ ${#missing[@]} -eq 0 ]; then
 else
     for f in "${missing[@]}"; do
         echo "  FAIL $f missing Authoritative source callout"
+    done
+    fail=1
+fi
+
+echo "== Authoritative source callout absence in design-only skills =="
+# These skills never emit Godot code; carrying the callout wastes tokens and
+# contradicts the documented policy. Source of truth: DESIGN_ONLY_SKILLS array
+# above. The `using-godot-superpowers` dispatcher is the canonical home of the
+# rule and is intentionally NOT in DESIGN_ONLY_SKILLS (it must keep the rule).
+unwanted=()
+for name in "${DESIGN_ONLY_SKILLS[@]}"; do
+    f="skills/$name/SKILL.md"
+    if [ -f "$f" ] && grep -q '\*\*Authoritative source\*\*' "$f"; then
+        unwanted+=("$f")
+    fi
+done
+if [ ${#unwanted[@]} -eq 0 ]; then
+    echo "  OK  design-only skills do not carry the redundant callout"
+else
+    for f in "${unwanted[@]}"; do
+        echo "  FAIL $f carries the Authoritative source callout but is exempt — remove the blockquote (rule lives in using-godot-superpowers)"
     done
     fail=1
 fi

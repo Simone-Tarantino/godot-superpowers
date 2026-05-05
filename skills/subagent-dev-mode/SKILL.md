@@ -13,7 +13,9 @@ A workflow that turns Claude into a thin coordinator: real work happens in subag
 
 Use subagent dev mode when **all** of the following are true:
 
-1. The user has approved a GDD (`game-brainstorming`) and a plan (`writing-game-plan`).
+1. The matching design trail has cleared. Either:
+   - **Trail A (greenfield)**: approved GDD (`game-brainstorming` + `gdd-writer`) AND approved plan (`writing-game-plan`).
+   - **Trail B (feature on existing game)**: approved feature spec (`feature-spec`, optionally informed by `codebase-survey`) AND approved feature plan (`feature-plan`).
 2. The current task is implementing a milestone or a feature touching **3+ files** or **2+ subsystems**.
 3. The user has not asked for a quick one-shot fix.
 
@@ -41,7 +43,8 @@ Activate this mode when the user says (or implies):
 | **Orchestrator** | `orchestrator` | sonnet | plan, GDD, file paths | `<orchestrator-state>` block + plan status |
 | **Worker** | one of the implementation skills/agents | sonnet | files in its scope | the file it owns |
 | **Verifier** | `file-verifier` | haiku | one file + `project.godot` | nothing — findings only |
-| **Researcher** | `Explore` (built-in) | sonnet | codebase | nothing |
+| **Integrator** | `milestone-integrator` | sonnet | plan, verifier verdicts, test outcomes; runs headless smoke | plan markdown status flip only |
+| **Researcher** | `Explore` (built-in) | IDE default | codebase | nothing |
 
 Main-context Claude becomes a thin shell: it confirms preconditions, hands the milestone to the orchestrator, relays the orchestrator's report to the user, and asks the next question.
 
@@ -75,7 +78,13 @@ verifier returns findings (no rewrite)
 if any CRITICAL → orchestrator dispatches fix-worker, re-verifies
   │
   ▼
-orchestrator reports batch summary to main-context Claude
+orchestrator dispatches milestone-integrator (smoke test + status flip)
+see agents/milestone-integrator.md — runs `godot --headless --quit-after 1`
+(with `--check-only` fallback), checks acceptance criteria, owns the
+milestone Status flip in the plan markdown
+  │
+  ▼
+orchestrator reports batch summary to main-context Claude (includes integrator verdict)
   │
   ▼
 main-context Claude relays summary, awaits "next phase" / "next milestone"
@@ -90,20 +99,24 @@ Main context grows whenever Claude reads a file or holds a long tool result. Sub
 | Workers run in **isolated context** (subagent property) | Worker output is one summary, not full file diff |
 | Verifier reads file **fresh**, returns findings only | Main context never ingests the full file |
 | Orchestrator never re-reads files workers wrote | No duplicate file reads |
-| Plan persists in `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`, not chat scrollback | Resume across sessions without re-reading history |
+| Plan persists in the active plan markdown (trail A: `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`; trail B: `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`), not chat scrollback | Resume across sessions without re-reading history |
 | Parallel dispatch (1 message, N Agent calls) | Same wall-time as one worker; no sequential context bloat |
 | `Explore` subagent for codebase research | Read-only, isolated, returns excerpts |
-| Caveman mode for inter-agent prose | Less filler in summaries |
+| Caveman mode for inter-agent prose (optional — requires the `superpowers` plugin; harmless if absent) | Less filler in summaries |
 
 **Rule of thumb**: main-context Claude should read no game source files in subagent dev mode. Only plan, GDD, and orchestrator reports.
 
 ## Step-by-step (what main-context Claude does)
 
-1. **Confirm preconditions**:
-   - `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` exists and is approved.
-   - `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` exists and is approved.
-   - User named a milestone (e.g. "M2: vertical slice").
-   If any missing, route back to `game-brainstorming` or `writing-game-plan`. Do not proceed.
+1. **Confirm preconditions** (one trail must be fully cleared):
+   - **Trail A — greenfield**:
+     - `docs/design/<YYYY-MM-DD>-<slug>-gdd.md` exists and is approved.
+     - `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` exists and is approved.
+   - **Trail B — feature on existing game**:
+     - `docs/features/<YYYY-MM-DD>-<slug>-feature.md` exists and is approved.
+     - `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md` exists and is approved.
+   - User named a milestone or feature scope (e.g. "M2: vertical slice", or "implement the dash feature").
+   If any missing, route back to the matching skill: `game-brainstorming` / `writing-game-plan` for trail A, or `codebase-survey` / `feature-spec` / `feature-plan` for trail B. Do not proceed.
 
 2. **Hand off to orchestrator**:
    ```
@@ -127,7 +140,7 @@ Main context grows whenever Claude reads a file or holds a long tool result. Sub
 | Worker reports "could not find file X" | Orchestrator dispatches `Explore` to locate; if missing entirely, escalate |
 | Worker deviates from plan | Orchestrator captures deviation in batch summary; main-context Claude asks user to approve / reject |
 | `godot-docs` MCP unavailable | Workers and verifier fall back to `https://docs.godotengine.org/en/stable/` and **say so** in their reports — main-context Claude warns the user |
-| User wants to pause mid-milestone | Orchestrator updates `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` with current state and stops; resume reads the same file |
+| User wants to pause mid-milestone | Orchestrator updates the active plan file (trail A: `docs/plans/<YYYY-MM-DD>-<slug>-plan.md`; trail B: `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`) with current state and stops; resume reads the same file |
 
 ## Anti-patterns
 
