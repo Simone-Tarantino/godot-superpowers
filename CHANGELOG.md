@@ -3,6 +3,15 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.12.1] — 2026-05-05
+
+### Fixed
+- **`godot-docs` MCP server: corrected npm package name.** `.mcp.json` previously launched `npx -y godot-docs-mcp`, but that package does not exist on the npm registry (404). The server therefore silently failed to start on every install, leaving the MCP unreachable despite appearing in the config. Fixed by switching to the canonical package: `@fernforestgames/mcp-server-godot-docs` (v0.1.1, MIT, by jspahrsummers).
+- **`godot-docs` MCP server: documented `GODOT_PATH` requirement.** The corrected package extracts bundled XML class docs from a local Godot install and fails fast with `Error: GODOT_PATH environment variable must be set` when the env var is missing. `.mcp.json` now declares the env passthrough; `README.md` and `mcp-meta.json` document the required export with platform-specific paths (macOS/Linux/Windows). Without `GODOT_PATH`, the server starts but every tool call errors.
+
+### Why
+- Tier 1 MCP integrity: this is the server that every code-emitting skill cites for API verification ("Authoritative source" callout in the dispatcher). Shipping a non-existent package name meant the entire verify-API-before-emitting-code discipline was running on a server that wasn't actually live — Claude could not detect this from inside the session because MCP tool listing never errors on a non-starting server, it just shows zero tools.
+
 ## [1.12.0] — 2026-05-05
 
 ### Changed (breaking — workflow simplification)

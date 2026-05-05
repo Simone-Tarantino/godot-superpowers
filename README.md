@@ -103,12 +103,25 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 | Server | Tier | Bundled in `.mcp.json` | Purpose |
 |--------|------|---|---------|
 | `godot-mcp` | tier 1 (essential) | yes | Editor automation |
-| `godot-docs` | tier 1 (essential) | yes | Inline doc lookup |
+| `godot-docs` | tier 1 (essential) | yes | Inline doc lookup — **requires `GODOT_PATH` env var** pointing to a local Godot executable (e.g. `/Applications/Godot.app/Contents/MacOS/Godot`); server fails fast otherwise |
 | `context7` | tier 1 (essential) | yes | Library docs |
 | `git` | tier 2 (recommended) | yes | Version control queries without shelling out |
 | `meshy` | tier 3 (bundled, needs API key) | yes | 3D model generation (text/image-to-3D, retexture, remesh, rig, animate) — used by `art-director` for 3D-asset scaffolding |
 | `elevenlabs` | tier 3 (external) | **no** | Audio generation — referenced by `sound-designer` / `sfx-generator` if installed |
 | `pixellab`, `comfyui` | tier 3 (external) | **no** | Image generation — referenced by `art-director` if installed |
+
+**Tier 1 with required env var (`godot-docs`):** the package (`@fernforestgames/mcp-server-godot-docs`) reads bundled XML class docs out of a local Godot install, so it requires `GODOT_PATH` to be exported before Claude Code launches:
+
+```bash
+# macOS
+export GODOT_PATH=/Applications/Godot.app/Contents/MacOS/Godot
+# Linux
+export GODOT_PATH=/usr/bin/godot
+# Windows (PowerShell)
+$env:GODOT_PATH = "C:\Program Files\Godot\Godot_v4.x_win64.exe"
+```
+
+Without it the server starts but every tool call returns `Error: GODOT_PATH environment variable must be set`. Add the export to your shell rc (`~/.zshrc`, `~/.bashrc`, etc.) so every session inherits it.
 
 **Tier 3 splits into two sub-cases:**
 

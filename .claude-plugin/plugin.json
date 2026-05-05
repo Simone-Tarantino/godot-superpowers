@@ -1,7 +1,7 @@
 {
   "name": "godot-superpowers",
   "description": "Full-spectrum Godot 4.x game development toolkit for Claude Code: skills, subagents, hooks, and MCP integration covering scaffolding, components, state machines, save systems, collision layers, GUT tests, shaders, audio, export pipelines, and genre packs (platformer, top-down, 3D action, turn-based).",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "author": {
     "name": "Simone Tarantino",
     "url": "https://github.com/Simone-Tarantino"

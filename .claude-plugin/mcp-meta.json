@@ -12,7 +12,14 @@
     },
     "godot-docs": {
       "tier": 1,
-      "purpose": "Inline Godot documentation lookup"
+      "purpose": "Inline Godot documentation lookup",
+      "package": "@fernforestgames/mcp-server-godot-docs",
+      "credential": {
+        "env": "GODOT_PATH",
+        "required": true,
+        "where_to_get": "Path to a local Godot executable (e.g. /Applications/Godot.app/Contents/MacOS/Godot on macOS, /usr/bin/godot on Linux). Server uses it to extract bundled XML class docs."
+      },
+      "note": "Server fails fast with `Error: GODOT_PATH environment variable must be set` if the env var is not exported in the user's shell. Earlier versions of this plugin shipped the wrong package name (`godot-docs-mcp`, which does not exist on npm), causing the server to silently fail to start. Fixed in v1.12.1."
     },
     "context7": {
       "tier": 1,

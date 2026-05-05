@@ -6,7 +6,10 @@
     },
     "godot-docs": {
       "command": "npx",
-      "args": ["-y", "godot-docs-mcp"]
+      "args": ["-y", "@fernforestgames/mcp-server-godot-docs"],
+      "env": {
+        "GODOT_PATH": "${GODOT_PATH}"
+      }
     },
     "context7": {
       "command": "npx",
