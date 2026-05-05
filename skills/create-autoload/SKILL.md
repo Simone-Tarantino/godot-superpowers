@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit
 argument-hint: <name> [extends-class]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Create Autoload
 
 Generate a single autoload singleton. For the canonical starter set (EventBus, GameState, SceneManager, AudioManager, SaveManager) use the `bootstrap-godot-project` skill.
@@ -97,23 +95,19 @@ signal settings_changed
 
 var _cfg := ConfigFile.new()
 
-
 func _ready() -> void:
     if _cfg.load(PATH) != OK:
         _set_defaults()
     _apply()
 
-
 func get_value(section: StringName, key: StringName, default: Variant) -> Variant:
     return _cfg.get_value(section, key, default)
-
 
 func set_value(section: StringName, key: StringName, value: Variant) -> void:
     _cfg.set_value(section, key, value)
     _cfg.save(PATH)
     settings_changed.emit()
     _apply()
-
 
 func _set_defaults() -> void:
     _cfg.set_value("audio", "master_db", 0.0)
@@ -122,7 +116,6 @@ func _set_defaults() -> void:
     _cfg.set_value("video", "fullscreen", false)
     _cfg.set_value("video", "vsync", true)
     _cfg.save(PATH)
-
 
 func _apply() -> void:
     AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), get_value("audio", "master_db", 0.0))
@@ -147,15 +140,12 @@ extends Node
 var _rng := RandomNumberGenerator.new()
 var _streams: Dictionary[StringName, RandomNumberGenerator] = {}
 
-
 func _ready() -> void:
     _rng.randomize()
-
 
 func seed_run(s: int) -> void:
     _rng.seed = s
     _streams.clear()
-
 
 func stream(name: StringName) -> RandomNumberGenerator:
     if not _streams.has(name):

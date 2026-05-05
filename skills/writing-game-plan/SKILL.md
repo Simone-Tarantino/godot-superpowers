@@ -1,6 +1,6 @@
 ---
 name: writing-game-plan
-description: "Run after game-brainstorming has produced an approved GDD. Produces a milestone-based implementation plan that maps every step to a specific godot-superpowers skill, identifies vertical slices, and gates implementation behind user approval. MUST run before any scaffolding, scene creation, or genre-pack invocation, even when a GDD already exists."
+description: "Run after game-brainstorming has produced an approved GDD. Produces a milestone-based implementation plan that maps every step to a specific godot-superpowers skill, identifies vertical slices, and soft-gates implementation behind user approval (opt-out via `/skip-design`). Should run before any scaffolding, scene creation, or genre-pack invocation."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: <path-to-gdd-file>
 ---
@@ -9,9 +9,9 @@ argument-hint: <path-to-gdd-file>
 
 Convert an approved Game Design Document into an actionable, milestone-based implementation plan that uses the godot-superpowers skill catalog as its building blocks.
 
-<HARD-GATE>
-You MUST NOT invoke any implementation skill (`bootstrap-godot-project`, `create-*`, `setup-*`, `genre-pack-*`, `shader-writer`, `sfx-generator`, `export-config`) until the plan produced by this skill has been written to `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` and explicitly approved by the user.
-</HARD-GATE>
+<SOFT-GATE>
+By default, do not invoke implementation skills (`bootstrap-godot-project`, `create-*`, `setup-*`, `genre-pack-*`, `shader-writer`, `sfx-generator`, `export-config`) until the plan produced by this skill has been written to `docs/plans/<YYYY-MM-DD>-<slug>-plan.md` and explicitly approved by the user. Opt-out: the user may bypass with `/skip-design` (or any clear equivalent) — warn once that mismatched scope is the typical failure mode, get a confirmation, then proceed.
+</SOFT-GATE>
 
 ## When to invoke
 

@@ -4,8 +4,6 @@ description: Set up a Resource-based save/load system for Godot 4.x — SaveMana
 allowed-tools: Read, Write, Edit
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Setup Save System
 
 Resource-backed save system. Survives reboots, handles typed data (Vector2, Color, Resources, custom classes), and uses a **group + method** convention so each persistable node owns its own serialization.
@@ -61,10 +59,8 @@ signal load_finished(slot: int, ok: bool)
 var _play_time_accum: float = 0.0
 var _session_start_msec: int = 0
 
-
 func _ready() -> void:
     _session_start_msec = Time.get_ticks_msec()
-
 
 func save_game(slot: int) -> bool:
     save_started.emit(slot)
@@ -84,7 +80,6 @@ func save_game(slot: int) -> bool:
     var ok := err == OK
     save_finished.emit(slot, ok)
     return ok
-
 
 func load_game(slot: int) -> bool:
     load_started.emit(slot)
@@ -113,10 +108,8 @@ func load_game(slot: int) -> bool:
     load_finished.emit(slot, true)
     return true
 
-
 func has_save(slot: int) -> bool:
     return FileAccess.file_exists(_path_for(slot))
-
 
 func delete_save(slot: int) -> bool:
     var path := _path_for(slot)
@@ -124,17 +117,14 @@ func delete_save(slot: int) -> bool:
         return false
     return DirAccess.remove_absolute(path) == OK
 
-
 func get_save_info(slot: int) -> SaveData:
     var path := _path_for(slot)
     if not FileAccess.file_exists(path):
         return null
     return load(path) as SaveData
 
-
 func _path_for(slot: int) -> String:
     return "%sslot_%d.tres" % [SAVE_DIR, slot]
-
 
 func _migrate(data: SaveData) -> SaveData:
     # add migrations here as VERSION bumps
@@ -156,10 +146,8 @@ Any node that needs persistence:
 class_name Player
 extends CharacterBody2D
 
-
 func _ready() -> void:
     add_to_group("persist")
-
 
 func save_data() -> Dictionary:
     return {
@@ -167,7 +155,6 @@ func save_data() -> Dictionary:
         "current_health": $HealthComponent.current_health,
         "inventory": $Inventory.serialize(),
     }
-
 
 func load_data(payload: Dictionary) -> void:
     position = payload.get("position", Vector2.ZERO)
@@ -198,7 +185,6 @@ SaveSlotMenu (Control)
 # in some controller node
 func _ready() -> void:
     EventBus.checkpoint_reached.connect(_on_checkpoint)
-
 
 func _on_checkpoint() -> void:
     SaveManager.save_game(0)  # slot 0 reserved for autosave

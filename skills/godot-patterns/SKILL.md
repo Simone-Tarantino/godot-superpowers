@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 paths: ["**/*.gd", "**/*.tscn", "**/*.tres", "project.godot"]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Godot 4.x Patterns Reference
 
 Source-of-truth: [Godot docs](https://docs.godotengine.org/en/stable/) and [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html).
@@ -37,11 +35,9 @@ var _state: State = State.IDLE
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hurtbox: Area2D = %Hurtbox  # unique name access
 
-
 func _ready() -> void:
     current_health = max_health
     _hurtbox.area_entered.connect(_on_hurtbox_area_entered)
-
 
 func take_damage(amount: int) -> void:
     var prev := current_health
@@ -49,7 +45,6 @@ func take_damage(amount: int) -> void:
     health_changed.emit(prev, current_health)
     if current_health == 0:
         died.emit()
-
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
     if area.is_in_group("enemy_hitbox"):
@@ -150,7 +145,6 @@ func _ready() -> void:
     var area: Area3D = $Area3D
     area.input_event.connect(_on_area_input_event)
     area.mouse_entered.connect(_on_mouse_entered)
-
 
 func _on_area_input_event(_camera: Camera3D, event: InputEvent, _pos: Vector3,
         _normal: Vector3, _shape_idx: int) -> void:

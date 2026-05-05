@@ -1,6 +1,6 @@
 ---
 name: using-godot-superpowers
-description: "Auto-loaded dispatcher for godot-superpowers. Establishes the design-before-code rule across two trails: trail A (greenfield) routes to game-brainstorming → gdd-writer → writing-game-plan; trail B (feature on an existing game) routes to codebase-survey → feature-spec → feature-plan. Any creative game-development task (new project, new feature, new mechanic, new scene, new component, new genre pack, new shader, new audio system) MUST clear both gates of the matching trail before any implementation skill runs."
+description: "Auto-loaded dispatcher for godot-superpowers. Establishes the design-before-code rule (soft-gated — opt-out via `/skip-design`) across two trails: trail A (greenfield) routes to game-brainstorming → gdd-writer → writing-game-plan; trail B (feature on an existing game) routes to codebase-survey → feature-spec → feature-plan. Any creative game-development task (new project, new feature, new mechanic, new scene, new component, new genre pack, new shader, new audio system) should clear both gates of the matching trail before implementation, unless the user explicitly opts out."
 paths: ["**/*.gd", "**/*.tscn", "**/*.tres", "**/*.gdshader", "project.godot", "**/*-gdd.md", "**/*-plan.md", "**/*-feature.md", "**/*-feature-plan.md", "**/*-survey.md"]
 ---
 
@@ -16,7 +16,7 @@ Use this table FIRST. It maps situation → exact `Agent` tool call. Always invo
 
 | Situation | Agent | Why this one |
 |---|---|---|
-| Just wrote / edited a `.gd` `.tscn` `.tres` `.gdshader` | `file-verifier` | Mandatory after every write — Haiku, isolated, returns findings only |
+| Wrote a batch of `.gd` `.tscn` `.tres` `.gdshader` (3+ files) or a single risky one | `file-verifier` | Recommended after milestone-sized batches; skip for single trivial edits — Haiku, isolated, returns findings only |
 | Implementing milestone with 3+ files or 2+ subsystems | `orchestrator` | Decomposes, dispatches workers + verifier in parallel, keeps main context flat |
 | Milestone batch finished — confirm integration before declaring done | `milestone-integrator` | Aggregates verifier verdicts + tests, runs `--quit-after 1` smoke on main scene (with `--check-only` fallback), flips plan status |
 | `.tscn` / `.tres` corrupted by merge or refactor (broken IDs / UIDs / `<<<<<<<` markers) | `merge-specialist` | Repair scene grammar, dedupe ids, fix paths, restore UIDs from git — text repair, not redesign |
@@ -36,11 +36,12 @@ Use this table FIRST. It maps situation → exact `Agent` tool call. Always invo
 
 ### Decision rules in priority order
 
-1. **Did I just write a Godot source file?** → `file-verifier` first, no exceptions.
-2. **Am I about to touch 3+ files for one milestone?** → `orchestrator`, never DIY.
-3. **Is the question read-only?** → `Explore` or relevant analyst agent (`code-reviewer`, `performance-profiler`, `playtest-analyst`).
-4. **Is the task genre-specific implementation?** → invoke the matching `genre-pack-*` SKILL directly (in main context or via worker), not an agent.
-5. **None of the above** → main context, no dispatch.
+1. **Did I just write 3+ Godot source files in one milestone?** → dispatch `file-verifier` on the batch.
+2. **Did I just touch a single risky file (deprecated API, hot path, security-relevant)?** → dispatch `file-verifier` on it. Otherwise skip — main-context Read + lint covers the trivial cases.
+3. **Am I about to touch 3+ files for one milestone?** → `orchestrator`, never DIY (the orchestrator owns its own verifier dispatch).
+4. **Is the question read-only?** → `Explore` or relevant analyst agent (`code-reviewer`, `performance-profiler`, `playtest-analyst`).
+5. **Is the task genre-specific implementation?** → invoke the matching `genre-pack-*` SKILL directly (in main context or via worker), not an agent.
+6. **None of the above** → main context, no dispatch.
 
 ### How to call
 
@@ -81,21 +82,21 @@ The plugin exposes both `godot-mcp` and `godot-docs`. They do different things �
 
 If both `godot-mcp` and `godot-docs` could plausibly answer (e.g. "what does `CharacterBody2D.move_and_slide` return?"), **prefer `godot-docs`** — it is the single source of truth for engine APIs. Reach for `godot-mcp` only when you need to *act on* or *read from* the user's actual project, not the docs.
 
-## The verification rule (after every write to a Godot source file)
+## The verification rule (after a batch of Godot writes — NOT every single file)
 
-> **After any `Edit` / `Write` to `.gd`, `.tscn`, `.tres`, or `.gdshader`, dispatch the `file-verifier` agent on that exact path before considering the change done.** Do not re-read the file in main context — the verifier reads it fresh and returns findings only.
+> **Dispatch `file-verifier` when (a) you've written 3+ Godot source files in one milestone, or (b) the single file you just wrote is risky (deprecated API surface, hot path, security-relevant, large refactor).** For trivial single-file edits, skip — `gdformat` / `gdlint` / `--check-only` already run via PostToolUse hooks, and main-context Read covers the rest. Verifier dispatch costs a sub-agent invocation; reserve it for the cases where the cost is worth it.
 
-This applies whether or not subagent dev mode is active. The verifier is cheap (Haiku), isolated (does not pollute main context), and catches the things `gdformat` / `gdlint` / `--check-only` cannot: API drift, plan deviations, composition violations, deprecated nodes for the project's Godot version.
+When the verifier IS invoked, the agent reads the file fresh and returns findings only. Do not re-read the file in main context after dispatch.
+
+The PostToolUse hook (`verifier-reminder.sh`) accumulates write counts and prints `verifier: dispatch file-verifier on <N> file(s) [...]` only once a session reaches the threshold (default 3, override via `CLAUDE_VERIFIER_THRESHOLD` env var). When you see that line, dispatch the verifier. Below the threshold, the hook stays silent — that is expected.
 
 When implementing a milestone touching 3+ files or 2+ subsystems, escalate to full subagent dev mode: hand off to the `orchestrator` agent and let it dispatch workers + verifier in parallel. See the `subagent-dev-mode` skill for the full workflow.
 
-If a `PostToolUse` hook printed `verifier: dispatch file-verifier on <N> file(s) [...]` and you have not yet dispatched `file-verifier` for those paths, do so now.
+## The design rule (soft-gate)
 
-## The design rule
+> Design before code is the default. The user can opt out per-session with `/skip-design` (or any clear equivalent — "skip design", "no GDD", "just build it").
 
-> Design before code. Always. For every project, regardless of size.
-
-If the user asks you to **start something creative** in a Godot project — new project, new mechanic, new feature, new scene, new component, new shader, new audio system, new genre pack — you MUST clear the matching design trail BEFORE any of these implementation skills run:
+If the user asks you to **start something creative** in a Godot project — new project, new mechanic, new feature, new scene, new component, new shader, new audio system, new genre pack — propose the matching design trail BEFORE any of these implementation skills run:
 
 - `bootstrap-godot-project`
 - `create-scene`, `create-component`, `create-state-machine`, `create-resource`, `create-autoload`
@@ -122,7 +123,7 @@ There are two trails. Pick exactly one based on whether the project already has 
 
 > **Trivial-feature shortcut.** Step 1 (`codebase-survey`) may be skipped if and only if ALL three hold: (a) the change touches exactly one file, (b) it adds no new mechanic, (c) it adds no new public surface (no new signal, exported var, autoload, or input action). When skipped, the spec header MUST contain the canonical marker string `Survey reference: none (trivial shortcut)` exactly — `feature-plan` keys off this string. If any condition fails, the survey is mandatory. See [`codebase-survey`](../codebase-survey/SKILL.md) and [`feature-spec`](../feature-spec/SKILL.md) for the canonical rule.
 
-Both trails end in an approved plan file. Both gates must clear before implementation. The `orchestrator` agent enforces the same precondition on dispatch — it refuses to run until the matching plan is `Status: Approved`.
+Both trails end in an approved plan file. Both gates apply by default before implementation; the user may opt out per-session with `/skip-design`. When the user opts out, warn ONCE that scope creep / regression risk are the typical failure modes, get a confirmation, then proceed without further re-warning in the same session. The `orchestrator` agent applies the same soft-gate on dispatch — it refuses to run unless either the matching plan is `Status: Approved` OR the user has explicitly waived the gate for the session (record the waiver in the orchestrator's prompt).
 
 If the change starts as trail B but turns out to touch every system, escalate to trail A and re-plan from scratch — do not silently mutate a feature plan into a whole-game plan.
 
@@ -164,17 +165,17 @@ Skip brainstorming for:
 
 If unsure, ask the user one short question: "Is this a fix to existing behavior, or new design work?" Their answer routes you.
 
-## Red flags — STOP and brainstorm
+## Red flags — propose the gate (do not silently skip)
 
-These thoughts mean you are about to skip the gate. Stop.
+These thoughts usually mean you are about to skip the gate without an explicit user opt-out. Don't. Propose the design trail; if the user wants to skip, they can say `/skip-design`.
 
 | Thought | Reality |
 |---|---|
 | "It's just a small feature" | Small features compound into design debt. Five minutes of brainstorming saves an hour of rework. |
-| "The user clearly wants X, let me just build it" | "Clearly" usually means "I'm projecting." Ask one question. |
+| "The user clearly wants X, let me just build it" | "Clearly" usually means "I'm projecting." Propose the trail and let the user decide. |
 | "It's a prototype, design doesn't matter" | Especially for prototypes. Throwaway code only stays throwaway if you scoped it to be. |
 | "I can scaffold the project and brainstorm in parallel" | No. Scaffolding decisions (renderer, autoloads, layers) depend on the GDD. |
-| "The user said 'just build a platformer'" | Genre is one input. Pillars, scope, target, art direction are not. Brainstorm. |
+| "The user said 'just build a platformer'" | Genre is one input. Pillars, scope, target, art direction are not. Offer the brainstorm; opt-out is theirs. |
 
 ## Order of operations for a new request
 

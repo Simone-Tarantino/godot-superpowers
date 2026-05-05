@@ -3,6 +3,23 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.12.0] — 2026-05-05
+
+### Changed (breaking — workflow simplification)
+- **Design gates are now soft-gates with explicit opt-out.** `game-brainstorming`, `writing-game-plan`, `feature-spec`, and `feature-plan` previously used `<HARD-GATE>` blocks that forbade implementation skills until both artifacts were written and approved. They now use `<SOFT-GATE>` blocks: default behavior is unchanged (propose the design pass, get approval), but the user can bypass per-session with `/skip-design` (or any clear equivalent). On opt-out, Claude warns ONCE about scope-creep / regression risk, gets a confirmation, then proceeds. The `orchestrator` agent applies the same soft-gate on dispatch — refuses unless the plan is approved OR the dispatching prompt carries an explicit waiver string (`design-gate: waived` / `/skip-design`). When waived, the orchestrator prepends a single warning line to the user-facing report.
+- **`Authoritative source` callout consolidated into the dispatcher only.** Previously, the same blockquote was duplicated in 37 skill/agent files (the validator enforced both presence in code-emitting files and absence in design-only files). The rule now lives only in `using-godot-superpowers` (the auto-loaded dispatcher), which is in context on every Godot session via its `paths` glob. Validator now enforces dispatcher-only presence and rejects duplicates anywhere else. Net effect: ~37 redundant blockquotes removed across the catalog.
+- **`file-verifier` is opt-in, not per-write.** The PostToolUse hook (`verifier-reminder.sh`) now accumulates Godot writes per project and emits the dispatch reminder only once a threshold is reached (default 3, override via `CLAUDE_VERIFIER_THRESHOLD`). Counter file lives under `$TMPDIR`. Single-file edits no longer trigger verifier dispatch. Decision rules in the dispatcher updated: dispatch verifier on milestone-sized batches (≥3 files) or single risky files; skip for trivial edits.
+- **Hooks unified to one source of truth.** `settings.json` `.hooks` is now the only hand-edited hooks block. `hooks/hooks.json` is regenerated from it automatically by `scripts/validate.sh` at the top of every run, eliminating the drift class entirely. `scripts/sync-hooks.sh` is preserved for manual regeneration but the validator's parity check is replaced by deterministic auto-sync.
+
+### Removed
+- **`memory` MCP server (tier 2).** The orchestrator state was already canonically stored in the `<orchestrator-state>` block inside the active plan markdown — `memory` MCP was a duplicate source of truth. Removed from `.mcp.json`, `mcp-meta.json`, and the `settings.local.json.example` comment. Tier 2 now contains only `git`.
+
+### Why
+- Friction reduction. The previous hard-gate workflow required the user to clear two design documents (or three for feature-trail) before any code ran, which made the plugin hostile for jam-game prototyping and exploratory work. The soft-gate keeps the design-first default — it remains the recommended path — but admits that a user opting out explicitly is making an informed trade-off, not a mistake to be policed.
+- Token economy. Duplicating the `Authoritative source` callout across 37 files cost roughly 40 lines × 37 = ~1500 lines of identical context that was already in scope via the auto-loaded dispatcher. The validator now actively prevents reintroduction.
+- Verifier overhead. Dispatching `file-verifier` (Haiku) after every single-file write paid sub-agent overhead for cases where main-context Read + the existing `gdformat` / `gdlint` / `--check-only` hooks already covered the surface. The threshold model concentrates verifier dispatch on the cases where the cost actually returns value: milestone batches and risky single files.
+- Source-of-truth duplication. Two places to maintain the hooks block (settings.json + hooks/hooks.json) was a bug factory; the validator's parity check caught drift but did not prevent it. Auto-sync makes drift impossible.
+
 ## [1.11.0] — 2026-05-05
 
 ### Added

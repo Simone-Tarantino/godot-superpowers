@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Bash, Glob
 argument-hint: [project-name]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Bootstrap Godot Project
 
 Scaffold a clean Godot 4.x project layout. Run from the project root (where `project.godot` will live, or already lives).
@@ -146,17 +144,14 @@ var score: int = 0
 var current_level: StringName = &""
 var flags: Dictionary[StringName, Variant] = {}
 
-
 func reset() -> void:
     score = 0
     current_level = &""
     flags.clear()
     EventBus.game_started.emit()
 
-
 func set_flag(key: StringName, value: Variant) -> void:
     flags[key] = value
-
 
 func get_flag(key: StringName, default: Variant = null) -> Variant:
     return flags.get(key, default)
@@ -173,7 +168,6 @@ const FADE_DURATION := 0.3
 @onready var _fade_layer: CanvasLayer = _build_fade_layer()
 @onready var _fade_rect: ColorRect = _fade_layer.get_child(0)
 
-
 func change_to(scene_path: String) -> void:
     EventBus.scene_transition_started.emit(scene_path)
     await _fade_in()
@@ -185,7 +179,6 @@ func change_to(scene_path: String) -> void:
     await _fade_out()
     EventBus.scene_transition_finished.emit()
 
-
 func change_to_packed(packed: PackedScene) -> void:
     EventBus.scene_transition_started.emit(packed.resource_path)
     await _fade_in()
@@ -193,18 +186,15 @@ func change_to_packed(packed: PackedScene) -> void:
     await _fade_out()
     EventBus.scene_transition_finished.emit()
 
-
 func _fade_in() -> Signal:
     var tw := create_tween()
     tw.tween_property(_fade_rect, "color:a", 1.0, FADE_DURATION)
     return tw.finished
 
-
 func _fade_out() -> Signal:
     var tw := create_tween()
     tw.tween_property(_fade_rect, "color:a", 0.0, FADE_DURATION)
     return tw.finished
-
 
 func _build_fade_layer() -> CanvasLayer:
     var layer := CanvasLayer.new()
@@ -232,7 +222,6 @@ var _music_b: AudioStreamPlayer
 var _active_music: AudioStreamPlayer
 var _music_target_db: float = -8.0
 
-
 func _ready() -> void:
     for i in SFX_POOL_SIZE:
         var p := AudioStreamPlayer.new()
@@ -242,7 +231,6 @@ func _ready() -> void:
     _music_a = _make_music_player()
     _music_b = _make_music_player()
     _active_music = _music_a
-
 
 func play_sfx(stream: AudioStream, pitch_variation: float = 0.1, bus: StringName = &"SFX") -> void:
     if stream == null:
@@ -254,7 +242,6 @@ func play_sfx(stream: AudioStream, pitch_variation: float = 0.1, bus: StringName
     p.bus = bus
     p.pitch_scale = randf_range(1.0 - pitch_variation, 1.0 + pitch_variation)
     p.play()
-
 
 func crossfade_music(stream: AudioStream, duration: float = 1.5) -> void:
     var fading := _active_music
@@ -268,19 +255,16 @@ func crossfade_music(stream: AudioStream, duration: float = 1.5) -> void:
     tw.chain().tween_callback(fading.stop)
     _active_music = rising
 
-
 func set_bus_volume(bus_name: StringName, db: float) -> void:
     var idx := AudioServer.get_bus_index(bus_name)
     if idx >= 0:
         AudioServer.set_bus_volume_db(idx, db)
-
 
 func _get_free_sfx_player() -> AudioStreamPlayer:
     for p in _sfx_players:
         if not p.playing:
             return p
     return null
-
 
 func _make_music_player() -> AudioStreamPlayer:
     var p := AudioStreamPlayer.new()
@@ -298,7 +282,6 @@ extends Node
 
 const SAVE_DIR := "user://saves/"
 
-
 func save_game(slot: int) -> Error:
     DirAccess.make_dir_recursive_absolute(SAVE_DIR)
     var data := SaveData.new()
@@ -307,7 +290,6 @@ func save_game(slot: int) -> Error:
         if node.has_method("save_data"):
             data.entries[node.get_path()] = node.save_data()
     return ResourceSaver.save(data, _path_for(slot))
-
 
 func load_game(slot: int) -> Error:
     var path := _path_for(slot)
@@ -322,10 +304,8 @@ func load_game(slot: int) -> Error:
             node.load_data(entry)
     return OK
 
-
 func has_save(slot: int) -> bool:
     return FileAccess.file_exists(_path_for(slot))
-
 
 func _path_for(slot: int) -> String:
     return "%sslot_%d.tres" % [SAVE_DIR, slot]
@@ -404,7 +384,6 @@ textures/canvas_textures/default_texture_filter=0  ; pixel art (0=Nearest); set 
 
 ```gdscript
 extends Node
-
 
 func _ready() -> void:
     print("Project bootstrapped. Replace scenes/main/main.tscn with your real entry point.")

@@ -4,8 +4,6 @@ description: Multiplayer foundation for Godot 4.x — `ENetMultiplayerPeer` setu
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Networking foundation (Godot 4.x High-Level Multiplayer)
 
 Godot ships a high-level multiplayer API on top of ENet (UDP) and WebSocket. It is enough to build co-op, small-PvP, and lobby-based games without an addon — it is **not** enough to ship competitive twitch FPS / fighting games (no built-in rollback, lag compensation, or anti-cheat). Pick the right scope before writing code.
@@ -63,14 +61,12 @@ signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
 signal server_disconnected
 
-
 func _ready() -> void:
     multiplayer.peer_connected.connect(func(id): peer_connected.emit(id))
     multiplayer.peer_disconnected.connect(func(id): peer_disconnected.emit(id))
     multiplayer.connected_to_server.connect(func(): joined.emit())
     multiplayer.connection_failed.connect(func(): join_failed.emit("connection refused"))
     multiplayer.server_disconnected.connect(func(): server_disconnected.emit())
-
 
 func host_game(port: int = PORT) -> Error:
     var peer := ENetMultiplayerPeer.new()
@@ -81,7 +77,6 @@ func host_game(port: int = PORT) -> Error:
     hosted.emit(port)
     return OK
 
-
 func join_game(address: String, port: int = PORT) -> Error:
     var peer := ENetMultiplayerPeer.new()
     var err := peer.create_client(address, port)
@@ -90,16 +85,13 @@ func join_game(address: String, port: int = PORT) -> Error:
     multiplayer.multiplayer_peer = peer
     return OK
 
-
 func leave() -> void:
     if multiplayer.multiplayer_peer != null:
         multiplayer.multiplayer_peer.close()
         multiplayer.multiplayer_peer = null
 
-
 func is_host() -> bool:
     return multiplayer.is_server()
-
 
 func local_id() -> int:
     return multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 0
@@ -115,7 +107,6 @@ Every RPC must declare four things in the annotation: who can call, reliability,
 class_name PlayerController
 extends CharacterBody2D
 
-
 # Server-authoritative damage. Only the server may call this.
 # Clients see the result via state sync, not via RPC.
 @rpc("authority", "call_local", "reliable")
@@ -123,7 +114,6 @@ func apply_damage(amount: float) -> void:
     health = max(0.0, health - amount)
     if health <= 0.0:
         die()
-
 
 # Client-to-server: a player requests an action.
 # `any_peer` allows any client to call; the server validates.
@@ -135,7 +125,6 @@ func request_use_ability(ability_id: int) -> void:
     if not _can_use(caller, ability_id):
         return    # silently ignore invalid request
     _perform_ability(caller, ability_id)
-
 
 # Unreliable, broadcast: cosmetic-only — fine to drop a packet.
 @rpc("authority", "call_local", "unreliable_ordered", 1)
@@ -203,14 +192,12 @@ Replicating a node from the server to all clients without each client manually i
 @onready var spawner: MultiplayerSpawner = $MultiplayerSpawner
 @onready var players_root: Node = $Players
 
-
 func _ready() -> void:
     spawner.spawn_path = players_root.get_path()
     spawner.add_spawnable_scene("res://scenes/player.tscn")
     if multiplayer.is_server():
         Net.peer_connected.connect(_spawn_player)
         _spawn_player(1)    # spawn host's own player
-
 
 func _spawn_player(peer_id: int) -> void:
     var p := preload("res://scenes/player.tscn").instantiate()

@@ -26,7 +26,7 @@ cp -R agents skills hooks scripts settings.json .mcp.json "$TARGET"/
 cp settings.local.json.example "$TARGET"/settings.local.json
 ```
 
-Note: `settings.local.json` itself is **gitignored** in this repo (per-user state). The tracked template is `settings.local.json.example` — copy it into the target as `settings.local.json` and edit if needed. The default template enables only the **tier 1 (essential)** MCP servers via an explicit `enabledMcpjsonServers` whitelist (`godot-mcp`, `godot-docs`, `context7`); tier 2 servers (`git`, `memory`) are opt-in — append them to the whitelist to enable. Tier 3 server `meshy` is bundled but requires the user to export `MESHY_API_KEY` in their shell (see "MCP servers" below for the full opt-in flow). Without a `settings.local.json`, `.mcp.json` is declarative-only and no server starts.
+Note: `settings.local.json` itself is **gitignored** in this repo (per-user state). The tracked template is `settings.local.json.example` — copy it into the target as `settings.local.json` and edit if needed. The default template enables only the **tier 1 (essential)** MCP servers via an explicit `enabledMcpjsonServers` whitelist (`godot-mcp`, `godot-docs`, `context7`); tier 2 server `git` is opt-in — append it to the whitelist to enable. Tier 3 server `meshy` is bundled but requires the user to export `MESHY_API_KEY` in their shell (see "MCP servers" below for the full opt-in flow). Without a `settings.local.json`, `.mcp.json` is declarative-only and no server starts.
 
 ## What you get
 
@@ -35,11 +35,11 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 | Category | Skill | Purpose |
 |----------|-------|---------|
 | **Design gates** | `using-godot-superpowers` | Auto-loaded dispatcher: enforces design-before-code + verifier-after-write rule |
-|  | `game-brainstorming` | Idea → approved GDD via structured Q&A (hard-gates implementation) |
-|  | `writing-game-plan` | Approved GDD → approved milestone plan (hard-gates implementation) |
+|  | `game-brainstorming` | Idea → approved GDD via structured Q&A (soft-gates implementation (opt-out via `/skip-design`)) |
+|  | `writing-game-plan` | Approved GDD → approved milestone plan (soft-gates implementation (opt-out via `/skip-design`)) |
 |  | `codebase-survey` | Read-only map of files / APIs / hotspots a planned feature will touch on an existing project |
 |  | `feature-spec` | Approved survey → approved feature spec (design delta on top of GDD) |
-|  | `feature-plan` | Approved feature spec → approved feature plan (hard-gates implementation) |
+|  | `feature-plan` | Approved feature spec → approved feature plan (soft-gates implementation (opt-out via `/skip-design`)) |
 | **Execution / Orchestration** | `subagent-dev-mode` | Orchestrator + worker + verifier loop for milestones (3+ files / 2+ subsystems); flat main-context tokens |
 | **Foundation** | `bootstrap-godot-project` | Scaffold full directory layout + base autoloads |
 |  | `setup-git-godot` | `.gitignore` + `.gitattributes` + Git LFS for binary assets |
@@ -105,7 +105,7 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 | `godot-mcp` | tier 1 (essential) | yes | Editor automation |
 | `godot-docs` | tier 1 (essential) | yes | Inline doc lookup |
 | `context7` | tier 1 (essential) | yes | Library docs |
-| `git`, `memory` | tier 2 (recommended) | yes | Version control + persistent memory |
+| `git` | tier 2 (recommended) | yes | Version control queries without shelling out |
 | `meshy` | tier 3 (bundled, needs API key) | yes | 3D model generation (text/image-to-3D, retexture, remesh, rig, animate) — used by `art-director` for 3D-asset scaffolding |
 | `elevenlabs` | tier 3 (external) | **no** | Audio generation — referenced by `sound-designer` / `sfx-generator` if installed |
 | `pixellab`, `comfyui` | tier 3 (external) | **no** | Image generation — referenced by `art-director` if installed |

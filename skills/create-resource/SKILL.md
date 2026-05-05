@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit
 argument-hint: <resource-name> [field:type ...]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Create Resource
 
 Generate a custom `Resource` class so designers (or a future you) can author data as `.tres` files in the editor instead of hardcoded `Dictionary` literals.
@@ -103,14 +101,12 @@ extends Resource
 
 @export var entries: Array[LootEntry] = []
 
-
 func roll(rng: RandomNumberGenerator) -> Array[Item]:
     var out: Array[Item] = []
     for entry in entries:
         if rng.randf() < entry.chance:
             out.append(entry.item)
     return out
-
 
 class LootEntry extends Resource:
     @export var item: Item
@@ -202,7 +198,6 @@ extends Resource
 @export var base: float = 10.0
 @export var modifiers: Array[StatModifier] = []
 
-
 func get_value() -> float:
     var value := base
     var add := 0.0
@@ -213,7 +208,6 @@ func get_value() -> float:
             StatModifier.Kind.PERCENT_ADD: add += m.amount
             StatModifier.Kind.PERCENT_MULT: mult *= 1.0 + m.amount
     return (value + value * add) * mult
-
 
 class StatModifier extends Resource:
     enum Kind { FLAT, PERCENT_ADD, PERCENT_MULT }

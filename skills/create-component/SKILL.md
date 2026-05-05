@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: <component-type> [target-2d | target-3d]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Create Component
 
 Generate a reusable component as a scene + script. Composition pattern: drop the component as a child of the entity that should "have" the behavior.
@@ -32,10 +30,8 @@ signal revived
 
 var current_health: int
 
-
 func _ready() -> void:
     current_health = max_health
-
 
 func take_damage(amount: int, _source: Node = null) -> void:
     if invulnerable or current_health <= 0:
@@ -47,7 +43,6 @@ func take_damage(amount: int, _source: Node = null) -> void:
     if current_health == 0:
         died.emit()
 
-
 func heal(amount: int) -> void:
     if current_health <= 0:
         return
@@ -56,14 +51,12 @@ func heal(amount: int) -> void:
     if current_health != prev:
         health_changed.emit(prev, current_health)
 
-
 func revive(amount: int = -1) -> void:
     var was_dead := current_health == 0
     current_health = max_health if amount < 0 else mini(max_health, amount)
     if was_dead:
         revived.emit()
     health_changed.emit(0, current_health)
-
 
 func get_health_ratio() -> float:
     return float(current_health) / float(max_health) if max_health > 0 else 0.0
@@ -85,10 +78,8 @@ extends Area2D
 @export var health_component: HealthComponent
 @export var damage_modifier: float = 1.0  ## e.g. 0.5 = takes half damage
 
-
 func _ready() -> void:
     area_entered.connect(_on_area_entered)
-
 
 func _on_area_entered(area: Area2D) -> void:
     if area is HitboxComponent2D and health_component:
@@ -110,17 +101,14 @@ extends Area2D
 @export var knockback: float = 200.0
 @export var disabled_on_start: bool = false
 
-
 func _ready() -> void:
     monitoring = false  # off by default; enable during attacks
     if disabled_on_start:
         return
     enable()
 
-
 func enable() -> void:
     monitoring = true
-
 
 func disable() -> void:
     monitoring = false
@@ -147,11 +135,9 @@ extends Node
 
 var body: CharacterBody2D
 
-
 func _ready() -> void:
     body = get_parent() as CharacterBody2D
     assert(body, "MoveComponent2D parent must be CharacterBody2D")
-
 
 func physics_step(_delta: float, input_x: float) -> void:
     if absf(input_x) > 0.0:
@@ -189,7 +175,6 @@ signal interacted(by: Node)
 
 var _consumed: bool = false
 
-
 func interact(by: Node) -> void:
     if _consumed:
         return
@@ -223,7 +208,6 @@ signal inventory_changed
 
 var _slots: Array[Dictionary] = []  # each: {"item": Item, "count": int}
 
-
 func add(item: Item, count: int = 1) -> int:
     var remaining := count
     if item.max_stack > 1:
@@ -243,7 +227,6 @@ func add(item: Item, count: int = 1) -> int:
         inventory_changed.emit()
     return count - remaining
 
-
 func remove(item: Item, count: int = 1) -> int:
     var remaining := count
     for i in range(_slots.size() - 1, -1, -1):
@@ -260,7 +243,6 @@ func remove(item: Item, count: int = 1) -> int:
         item_removed.emit(item, count - remaining)
         inventory_changed.emit()
     return count - remaining
-
 
 func has(item: Item, count: int = 1) -> bool:
     var total := 0
@@ -304,7 +286,6 @@ Player script wires components in `_ready`:
 func _ready() -> void:
     _hurtbox.health_component = _health
     _health.died.connect(_on_died)
-
 
 func _physics_process(delta: float) -> void:
     # Genre-agnostic input drive. A genre pack will add gravity, jump, dash, etc.

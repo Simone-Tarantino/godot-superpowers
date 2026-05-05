@@ -4,8 +4,6 @@ description: Build correct UI in Godot 4.x — Theme + StyleBox setup, Control f
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # UI patterns (Godot 4.x)
 
 Godot's UI system is powerful and *very* easy to misuse. Three failure modes drive 80% of UI bugs in indie projects:
@@ -56,7 +54,6 @@ extends EditorScript
 
 const THEME_PATH := "res://ui/theme.tres"
 
-
 func _run() -> void:
     var theme := Theme.new()
     var font := load("res://ui/fonts/Inter-Regular.ttf") as FontFile
@@ -75,7 +72,6 @@ func _run() -> void:
     ResourceSaver.save(theme, THEME_PATH)
     print("Theme saved to ", THEME_PATH)
 
-
 func _box(bg: Color, border: Color) -> StyleBoxFlat:
     var sb := StyleBoxFlat.new()
     sb.bg_color = bg
@@ -87,7 +83,6 @@ func _box(bg: Color, border: Color) -> StyleBoxFlat:
     sb.content_margin_top = 6
     sb.content_margin_bottom = 6
     return sb
-
 
 func _focus_ring() -> StyleBoxFlat:
     var sb := _box(Color(0, 0, 0, 0), Color("4a9eff"))
@@ -142,7 +137,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func _ready() -> void:
     %ResumeButton.pressed.connect(_on_resume)
 
-
 func _gui_input(event: InputEvent) -> void:
     if event.is_action_pressed("ui_cancel"):
         _on_resume()
@@ -162,7 +156,6 @@ extends Control
 @onready var resume: Button   = %ResumeButton
 @onready var settings: Button = %SettingsButton
 @onready var quit: Button     = %QuitButton
-
 
 func _ready() -> void:
     resume.focus_neighbor_bottom   = settings.get_path()

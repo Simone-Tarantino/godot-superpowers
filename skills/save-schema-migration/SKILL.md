@@ -4,8 +4,6 @@ description: Version save data and migrate old saves forward when the schema cha
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Save schema migration
 
 A shipped game inherits every save format it ever published. The first time you add a field to `SaveData` and re-export, every existing player loads a save with the *old* shape and gets either: silent data loss (missing field defaults to zero), a hard crash (`null.method()` on a missing sub-Resource), or a corrupt run.
@@ -44,7 +42,6 @@ const SCHEMA_VERSION := 3   # bump on every breaking change
 # v3 added: difficulty preset (was inferred from world flags before)
 @export var difficulty: StringName = &"normal"
 
-
 func assert_valid() -> void:
     assert(schema_version == SCHEMA_VERSION, "save not migrated to current schema")
     assert(timestamp > 0, "missing timestamp")
@@ -63,7 +60,6 @@ const _MIGRATIONS := {
     2: "_v2_to_v3",
 }
 
-
 func migrate(data: SaveData) -> SaveData:
     while data.schema_version < SaveData.SCHEMA_VERSION:
         var previous := data.schema_version
@@ -77,7 +73,6 @@ func migrate(data: SaveData) -> SaveData:
         assert(data.schema_version == previous + 1,
             "migration %s left schema_version=%d (expected %d)" % [fn, data.schema_version, previous + 1])
     return data
-
 
 # v1 → v2: split monolithic `inventory` Dictionary into typed Resource list.
 func _v1_to_v2(data: SaveData) -> void:
@@ -98,7 +93,6 @@ func _v1_to_v2(data: SaveData) -> void:
         entry["inventory"] = migrated
         data.entries[player_path] = entry
     data.schema_version = 2
-
 
 # v2 → v3: difficulty was inferred from world_flags["hardcore"]; lift to top-level.
 func _v2_to_v3(data: SaveData) -> void:
@@ -157,7 +151,6 @@ extends GutTest
 ## Loads each historical save fixture, migrates, and validates.
 ## Add a new test_v<N>_loads() function every time SCHEMA_VERSION bumps.
 
-
 func test_v1_loads() -> void:
     var data := load("res://test/fixtures/save/v1.tres") as SaveData
     assert_not_null(data)
@@ -167,7 +160,6 @@ func test_v1_loads() -> void:
     assert_eq(migrated.schema_version, SaveData.SCHEMA_VERSION)
     migrated.assert_valid()
 
-
 func test_v2_loads() -> void:
     var data := load("res://test/fixtures/save/v2.tres") as SaveData
     assert_eq(data.schema_version, 2)
@@ -175,7 +167,6 @@ func test_v2_loads() -> void:
     assert_not_null(migrated)
     assert_eq(migrated.schema_version, SaveData.SCHEMA_VERSION)
     migrated.assert_valid()
-
 
 func test_future_version_rejected() -> void:
     # A future version cannot be migrated — load_game must refuse.

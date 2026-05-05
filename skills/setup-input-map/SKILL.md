@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit
 argument-hint: [genre: platformer | topdown | 3d-action | fps | turnbased]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Setup Input Map
 
 Configures Godot 4.x [InputMap](https://docs.godotengine.org/en/stable/tutorials/inputs/inputevent.html) actions and provides a remap UI scaffold.
@@ -143,18 +141,15 @@ const SAVE_PATH := "user://input_map.cfg"
 var _capturing_action: StringName = &""
 var _row_for_action: Dictionary[StringName, HBoxContainer] = {}
 
-
 func _ready() -> void:
     _reset_button.pressed.connect(_on_reset_pressed)
     _load_overrides()
     _build_rows()
 
-
 func _on_reset_pressed() -> void:
     InputMap.load_from_project_settings()
     DirAccess.remove_absolute(SAVE_PATH)
     _build_rows()
-
 
 func _build_rows() -> void:
     for child in _list.get_children():
@@ -172,11 +167,9 @@ func _build_rows() -> void:
         _list.add_child(row)
         _row_for_action[action] = row
 
-
 func _capture(action: StringName, btn: Button) -> void:
     _capturing_action = action
     btn.text = "press a key..."
-
 
 func _input(event: InputEvent) -> void:
     if _capturing_action == &"":
@@ -190,12 +183,10 @@ func _input(event: InputEvent) -> void:
             _capturing_action = &""
             get_viewport().set_input_as_handled()
 
-
 func _format_event(events: Array[InputEvent]) -> String:
     if events.is_empty():
         return "(unbound)"
     return events[0].as_text()
-
 
 func _save_overrides() -> void:
     var cfg := ConfigFile.new()
@@ -203,7 +194,6 @@ func _save_overrides() -> void:
         var events := InputMap.action_get_events(action)
         cfg.set_value("input", action, events)
     cfg.save(SAVE_PATH)
-
 
 func _load_overrides() -> void:
     var cfg := ConfigFile.new()

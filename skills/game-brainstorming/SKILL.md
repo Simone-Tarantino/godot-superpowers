@@ -1,27 +1,27 @@
 ---
 name: game-brainstorming
-description: "MUST run before any Godot scaffolding, scene creation, component generation, or genre-pack invocation. Turns a game idea into an approved Game Design Document (GDD) through a structured one-question-at-a-time dialogue tailored to game development (genre, platform, scope, core loop, art / audio direction). Hands off to `writing-game-plan` for the implementation plan. Hard-gates implementation skills until both artifacts are approved."
+description: "Run before any Godot scaffolding, scene creation, component generation, or genre-pack invocation (soft-gated — opt-out via `/skip-design`). Turns a game idea into an approved Game Design Document (GDD) through a structured one-question-at-a-time dialogue tailored to game development (genre, platform, scope, core loop, art / audio direction). Hands off to `writing-game-plan` for the implementation plan."
 ---
 
 # Game Brainstorming — design before code
 
 Turn a vague idea into an approved GDD plus an approved implementation plan, through collaborative dialogue.
 
-<HARD-GATE>
-You MUST NOT invoke any of these skills, write any `.gd` / `.tscn` / `project.godot` content, or run any scaffolding command until BOTH a GDD and an implementation plan have been written and explicitly approved by the user:
+<SOFT-GATE>
+**Default behavior**: before invoking any of the implementation skills below, complete the design pass (this skill → `gdd-writer` → `writing-game-plan`) and get explicit user approval on both artifacts. Skipping the gate is the single largest source of wasted work in game dev — feature creep, mismatched art, throw-away code, mechanics that don't serve the core loop.
 
+Implementation skills covered by the gate:
 - `bootstrap-godot-project`
 - `create-scene`, `create-component`, `create-state-machine`, `create-resource`, `create-autoload`
 - `setup-collision-layers`, `setup-input-map`, `setup-save-system`, `setup-localization`, `save-schema-migration`
 - `ui-patterns-godot`, `networking-foundation`, `setup-git-godot`
 - `genre-pack-platformer`, `genre-pack-topdown`, `genre-pack-3d-action`, `genre-pack-turnbased`
 - `shader-writer`, `sfx-generator`, `export-config`
-- Any skill that introduces game behavior, infrastructure, or persistent project layout (autoloads, layers, schemas, network code, repo configuration) — when in doubt, gate.
 
-This applies to EVERY project regardless of perceived simplicity, including jam games, prototypes, and "I just want to test something." Skipping this step is the single largest source of wasted work in game dev — feature creep, mismatched art, throw-away code paths, mechanics that don't serve the core loop.
+**Opt-out**: the user may bypass the gate by saying `/skip-design`, `skip design`, `no GDD`, or any equivalent phrasing. When that happens, skip directly to implementation but warn ONCE: "Skipping design pass — flagging that scope creep, mismatched art, and throwaway code are the typical failure modes here. I'll proceed if you confirm." Wait for the confirmation, then proceed without further re-warning in this session.
 
-Exceptions: read-only skills (`godot-patterns`, `performance-audit`), maintenance skills (`update-docs`, `gut-test-writer`), and analysis agents (`code-reviewer`, `playtest-analyst`, `gdscript-migrator`) may run without a brainstorm.
-</HARD-GATE>
+**Always-allowed without gate**: read-only skills (`godot-patterns`, `performance-audit`), maintenance skills (`update-docs`, `gut-test-writer`), and analysis agents (`code-reviewer`, `playtest-analyst`, `gdscript-migrator`).
+</SOFT-GATE>
 
 ## Checklist
 

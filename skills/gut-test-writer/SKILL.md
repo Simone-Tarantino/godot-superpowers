@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: <target-script-or-scene>
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # GUT Test Writer
 
 Generate [GUT](https://github.com/bitwes/Gut) tests. For GdUnit4, see the `qa-tester` agent — same patterns, different API.
@@ -63,51 +61,42 @@ const HealthComponent := preload("res://scripts/components/health_component.gd")
 
 var _hp: HealthComponent
 
-
 func before_each() -> void:
     _hp = HealthComponent.new()
     _hp.max_health = 100
     add_child_autofree(_hp)
     _hp._ready()  # _ready is called when added; explicit here for clarity
 
-
 func test_starts_at_full_health() -> void:
     assert_eq(_hp.current_health, 100)
-
 
 func test_take_damage_reduces_health() -> void:
     _hp.take_damage(30)
     assert_eq(_hp.current_health, 70)
 
-
 func test_take_damage_clamps_at_zero() -> void:
     _hp.take_damage(9999)
     assert_eq(_hp.current_health, 0)
-
 
 func test_die_signal_emitted_at_zero() -> void:
     watch_signals(_hp)
     _hp.take_damage(100)
     assert_signal_emitted(_hp, "died")
 
-
 func test_health_changed_payload() -> void:
     watch_signals(_hp)
     _hp.take_damage(25)
     assert_signal_emitted_with_parameters(_hp, "health_changed", [100, 75])
-
 
 func test_invulnerable_blocks_damage() -> void:
     _hp.invulnerable = true
     _hp.take_damage(50)
     assert_eq(_hp.current_health, 100)
 
-
 func test_heal_does_not_overshoot_max() -> void:
     _hp.take_damage(20)
     _hp.heal(50)
     assert_eq(_hp.current_health, 100)
-
 
 func test_revive_after_death() -> void:
     _hp.take_damage(100)
@@ -127,12 +116,10 @@ const PlayerScene := preload("res://scenes/player/player.tscn")
 
 var _player: Player
 
-
 func before_each() -> void:
     _player = PlayerScene.instantiate()
     add_child_autofree(_player)
     await get_tree().process_frame   # let _ready propagate to children
-
 
 func test_player_dies_when_hp_zero() -> void:
     watch_signals(_player)
@@ -167,7 +154,6 @@ class MockAudioManager extends Node:
 
     func play_sfx(name: StringName, _pitch_variation: float = 0.1) -> void:
         played.append(name)
-
 
 func test_player_plays_jump_sfx() -> void:
     var mock := MockAudioManager.new()

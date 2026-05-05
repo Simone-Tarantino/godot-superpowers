@@ -7,6 +7,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 fail=0
 
+# Auto-regenerate hooks/hooks.json from settings.json (single source of truth).
+# Drift is no longer possible: validator always restores parity from settings.json.
+# If the regenerated hooks.json differs from the committed file, that is the
+# intended fix — the next commit will pick up the change.
+echo "== Hooks auto-sync =="
+jq '{hooks: .hooks}' settings.json > hooks/hooks.json
+echo "  OK  hooks/hooks.json regenerated from settings.json (canonical)"
+
 echo "== JSON validity =="
 required_json=(.claude-plugin/plugin.json .claude-plugin/marketplace.json .claude-plugin/mcp-meta.json hooks/hooks.json settings.json .mcp.json settings.local.json.example)
 optional_json=(settings.local.json)
@@ -45,14 +53,6 @@ if [ "$plugin_version" = "$marketplace_version" ]; then
     echo "  OK  both at $plugin_version"
 else
     echo "  FAIL plugin.json=$plugin_version, marketplace.json=$marketplace_version — bump them in lock-step"
-    fail=1
-fi
-
-echo "== Hooks parity (settings.json ↔ hooks/hooks.json) =="
-if diff <(jq -S '{hooks: .hooks}' settings.json) <(jq -S '.' hooks/hooks.json) >/dev/null; then
-    echo "  OK  in sync"
-else
-    echo "  FAIL drift detected. Run scripts/sync-hooks.sh"
     fail=1
 fi
 
@@ -185,55 +185,28 @@ for f in README.md CLAUDE.md skills/using-godot-superpowers/SKILL.md skills/suba
 done
 [ "$hook_drift" -eq 0 ] && echo "  OK  live docs reference current hook wording"
 
-echo "== Authoritative source callout coverage =="
-missing=()
-# Code-emitting skills must carry the standard callout. Skip set:
-#   - DESIGN_ONLY_SKILLS (design / docs / config-only — never emit Godot API)
-#   - using-godot-superpowers (the dispatcher itself — canonical home of the rule)
-for f in skills/*/SKILL.md; do
-    name=$(basename "$(dirname "$f")")
-    if [ "$name" = "using-godot-superpowers" ] || _in_array "$name" DESIGN_ONLY_SKILLS; then
-        continue
-    fi
-    if ! grep -q '\*\*Authoritative source\*\*' "$f"; then
-        missing+=("$f")
-    fi
-done
-for f in agents/*.md; do
-    # No agent is exempt from the callout: addon-curator, export-engineer,
-    # playtest-analyst, and game-designer all cite class names or example
-    # snippets and must carry the rule. Mirror the skill loop above without
-    # any skip cases.
-    if ! grep -q '\*\*Authoritative source\*\*' "$f"; then
-        missing+=("$f")
-    fi
-done
-if [ ${#missing[@]} -eq 0 ]; then
-    echo "  OK  all code-emitting skills/agents carry the callout"
-else
-    for f in "${missing[@]}"; do
-        echo "  FAIL $f missing Authoritative source callout"
-    done
+echo "== Authoritative source callout (dispatcher-only) =="
+# The rule lives ONLY in the dispatcher (using-godot-superpowers). Every other
+# skill / agent inherits the rule via the auto-loaded dispatcher — no per-file
+# duplication. Validator enforces both: dispatcher MUST carry it, every other
+# file MUST NOT.
+dispatcher_file="skills/using-godot-superpowers/SKILL.md"
+if ! grep -q '\*\*Authoritative source\*\*' "$dispatcher_file"; then
+    echo "  FAIL $dispatcher_file is missing the Authoritative source callout — it is the canonical home of the rule"
     fail=1
 fi
-
-echo "== Authoritative source callout absence in design-only skills =="
-# These skills never emit Godot code; carrying the callout wastes tokens and
-# contradicts the documented policy. Source of truth: DESIGN_ONLY_SKILLS array
-# above. The `using-godot-superpowers` dispatcher is the canonical home of the
-# rule and is intentionally NOT in DESIGN_ONLY_SKILLS (it must keep the rule).
 unwanted=()
-for name in "${DESIGN_ONLY_SKILLS[@]}"; do
-    f="skills/$name/SKILL.md"
-    if [ -f "$f" ] && grep -q '\*\*Authoritative source\*\*' "$f"; then
+for f in skills/*/SKILL.md agents/*.md; do
+    [ "$f" = "$dispatcher_file" ] && continue
+    if grep -q '\*\*Authoritative source\*\*' "$f"; then
         unwanted+=("$f")
     fi
 done
 if [ ${#unwanted[@]} -eq 0 ]; then
-    echo "  OK  design-only skills do not carry the redundant callout"
+    echo "  OK  callout lives only in dispatcher; no duplicates"
 else
     for f in "${unwanted[@]}"; do
-        echo "  FAIL $f carries the Authoritative source callout but is exempt — remove the blockquote (rule lives in using-godot-superpowers)"
+        echo "  FAIL $f carries the Authoritative source callout — rule lives only in $dispatcher_file"
     done
     fail=1
 fi

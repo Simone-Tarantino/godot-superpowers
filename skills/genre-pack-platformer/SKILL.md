@@ -4,8 +4,6 @@ description: 2D platformer movement pack — coyote time, jump buffer, variable 
 allowed-tools: Read, Write, Edit
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Genre Pack: 2D Platformer
 
 Battle-tested platformer movement. Tune the constants — defaults give a snappy mid-air feel similar to Celeste / Hollow Knight.
@@ -57,11 +55,9 @@ var _dash_time: float = 0.0
 var _dash_cd: float = 0.0
 var body: CharacterBody2D
 
-
 func _ready() -> void:
     body = get_parent() as CharacterBody2D
     assert(body, "PlatformerMoveComponent parent must be CharacterBody2D")
-
 
 func physics_step(delta: float, input_x: float, jump_pressed: bool, jump_released: bool, dash_pressed: bool) -> void:
     _wall_lock = maxf(0.0, _wall_lock - delta)
@@ -130,7 +126,6 @@ func physics_step(delta: float, input_x: float, jump_pressed: bool, jump_release
 
     body.move_and_slide()
 
-
 func is_dashing() -> bool:
     return _dash_time > 0.0
 ```
@@ -146,7 +141,6 @@ extends CharacterBody2D
 @onready var _move: PlatformerMoveComponent = $PlatformerMoveComponent
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 
-
 func _physics_process(delta: float) -> void:
     var input_x := Input.get_axis("move_left", "move_right")
     var jump_pressed := Input.is_action_just_pressed("jump")
@@ -158,7 +152,6 @@ func _physics_process(delta: float) -> void:
     if absf(input_x) > 0.05:
         _sprite.flip_h = input_x < 0.0
     _update_animation()
-
 
 func _update_animation() -> void:
     if _move.is_dashing():
@@ -195,7 +188,6 @@ extends Camera2D
 
 var _target_pos: Vector2
 
-
 func _physics_process(delta: float) -> void:
     if not target:
         return
@@ -221,7 +213,6 @@ extends Node
 var _free: Array[Node] = []
 var _active: Array[Node] = []
 
-
 func _ready() -> void:
     for i in initial_size:
         var b := bullet_scene.instantiate()
@@ -230,7 +221,6 @@ func _ready() -> void:
         b.visible = false
         add_child(b)
         _free.append(b)
-
 
 func acquire() -> Node:
     var b: Node = _free.pop_back() if not _free.is_empty() else bullet_scene.instantiate()
@@ -241,7 +231,6 @@ func acquire() -> Node:
     b.visible = true
     _active.append(b)
     return b
-
 
 func release(b: Node) -> void:
     b.set_process(false)

@@ -4,8 +4,6 @@ description: Configure Godot 4.x physics collision layers and masks for 2D and 3
 allowed-tools: Read, Write, Edit
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Setup Collision Layers
 
 Configures **Project Settings → Layer Names → 2D Physics** and **3D Physics** with a battle-tested 11-layer scheme that supports clean hurtbox/hitbox separation.

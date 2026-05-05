@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Edit, Glob
 argument-hint: <entity-name> [state-list...]
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Create State Machine
 
 Generate a node-based FSM. Compared to class-based / dictionary-based FSMs:
@@ -34,7 +32,6 @@ signal state_changed(old: StringName, new: StringName)
 var current_state: State
 var states: Dictionary[StringName, State] = {}
 
-
 func _ready() -> void:
     for child in get_children():
         if child is State:
@@ -47,21 +44,17 @@ func _ready() -> void:
     if current_state:
         current_state.enter({})
 
-
 func _process(delta: float) -> void:
     if current_state:
         current_state.update(delta)
-
 
 func _physics_process(delta: float) -> void:
     if current_state:
         current_state.physics_update(delta)
 
-
 func _unhandled_input(event: InputEvent) -> void:
     if current_state:
         current_state.handle_input(event)
-
 
 func change_state(target: StringName, payload: Dictionary = {}) -> void:
     if not states.has(target):
@@ -75,7 +68,6 @@ func change_state(target: StringName, payload: Dictionary = {}) -> void:
         print("[FSM] %s -> %s" % [old, target])
     state_changed.emit(old, target)
     current_state.enter(payload)
-
 
 func _on_state_transitioned(target: StringName, payload: Dictionary) -> void:
     change_state(target, payload)
@@ -91,22 +83,17 @@ extends Node
 
 signal transitioned(target: StringName, payload: Dictionary)
 
-
 func enter(_payload: Dictionary) -> void:
     pass
-
 
 func exit() -> void:
     pass
 
-
 func update(_delta: float) -> void:
     pass
 
-
 func physics_update(_delta: float) -> void:
     pass
-
 
 func handle_input(_event: InputEvent) -> void:
     pass
@@ -122,13 +109,11 @@ extends State
 
 @export var move_threshold: float = 0.05
 
-
 func enter(_payload: Dictionary) -> void:
     var player := owner as CharacterBody2D
     var anim := player.get_node("AnimationPlayer") as AnimationPlayer
     anim.play("idle")
     player.velocity.x = 0.0
-
 
 func physics_update(_delta: float) -> void:
     var input_x := Input.get_axis("move_left", "move_right")
@@ -149,10 +134,8 @@ extends State
 @export var max_speed: float = 250.0
 @export var acceleration: float = 1500.0
 
-
 func enter(_payload: Dictionary) -> void:
     (owner.get_node("AnimationPlayer") as AnimationPlayer).play("run")
-
 
 func physics_update(delta: float) -> void:
     var player := owner as CharacterBody2D
@@ -210,7 +193,6 @@ Use `addon-curator` agent to install one.
 extends GutTest
 
 const PlayerScene := preload("res://scenes/player/player.tscn")
-
 
 func test_idle_to_run_on_input() -> void:
     var player := add_child_autofree(PlayerScene.instantiate())

@@ -5,8 +5,6 @@ allowed-tools: Read, Write, Bash, Glob, mcp__elevenlabs__*
 argument-hint: <sound-or-music-description>
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # SFX & Music Generator
 
 ## Format rules (Godot 4.x)
@@ -148,7 +146,6 @@ const SFX_POOL_SIZE := 16
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_cache: Dictionary[StringName, Array] = {}  # name -> Array[AudioStream] variants
 
-
 func _ready() -> void:
     for i in SFX_POOL_SIZE:
         var p := AudioStreamPlayer.new()
@@ -156,7 +153,6 @@ func _ready() -> void:
         add_child(p)
         _sfx_players.append(p)
     _load_sfx_variants()
-
 
 func play_sfx(name: StringName, pitch_variation: float = 0.1) -> void:
     var variants: Array = _sfx_cache.get(name, [])
@@ -170,13 +166,11 @@ func play_sfx(name: StringName, pitch_variation: float = 0.1) -> void:
     p.pitch_scale = randf_range(1.0 - pitch_variation, 1.0 + pitch_variation)
     p.play()
 
-
 func _get_free_player() -> AudioStreamPlayer:
     for p in _sfx_players:
         if not p.playing:
             return p
     return null
-
 
 func _load_sfx_variants() -> void:
     # Group _01, _02, ... as variants of same name

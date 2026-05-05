@@ -4,8 +4,6 @@ description: Turn-based / card / tactical pack — TurnManager autoload, Action 
 allowed-tools: Read, Write, Edit
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Genre Pack: Turn-Based
 
 Patterns for turn-based games — works for tactics RPGs, card games, roguelikes, and grid-based puzzlers. Designed for **deterministic resolution** so games are replay-friendly and netcode-friendly.
@@ -37,13 +35,11 @@ var current_round: int = 0
 var current_actor_index: int = 0
 var battle_running: bool = false
 
-
 func start_battle(participants: Array[Actor]) -> void:
     actors = participants
     current_round = 0
     battle_running = true
     _next_round()
-
 
 func _next_round() -> void:
     if not battle_running:
@@ -53,7 +49,6 @@ func _next_round() -> void:
     round_started.emit(current_round)
     current_actor_index = -1
     _next_turn()
-
 
 func _next_turn() -> void:
     if not battle_running:
@@ -74,7 +69,6 @@ func _next_turn() -> void:
     turn_ended.emit(actor)
     _next_turn()
 
-
 func _check_victory() -> void:
     var teams: Dictionary[StringName, int] = {}
     for a in actors:
@@ -84,7 +78,6 @@ func _check_victory() -> void:
         battle_running = false
         var winner: StringName = teams.keys()[0] if teams.size() == 1 else &"draw"
         battle_ended.emit(winner)
-
 
 func end_battle() -> void:
     battle_running = false
@@ -108,14 +101,11 @@ var current_health: int = 0
 var max_health: int = 0
 var action_points: int = 0
 
-
 func start_round() -> void:
     action_points = max_action_points
 
-
 func take_turn() -> void:
     push_error("Subclass Actor and override take_turn()")
-
 
 func is_alive() -> bool:
     return current_health > 0
@@ -129,12 +119,10 @@ extends Actor
 
 signal _turn_finished
 
-
 func take_turn() -> void:
     start_round()
     EventBus.player_turn_started.emit(self)
     await _turn_finished
-
 
 func submit_action(action: Action) -> void:
     if action.cost > action_points:
@@ -147,7 +135,6 @@ func submit_action(action: Action) -> void:
     action_taken.emit(action)
     if action_points <= 0:
         _turn_finished.emit()
-
 
 func end_turn() -> void:
     _turn_finished.emit()
@@ -162,7 +149,6 @@ class_name EnemyActor
 extends Actor
 
 @export var ai_brain: EnemyBrain   ## a Resource
-
 
 func take_turn() -> void:
     start_round()
@@ -186,10 +172,8 @@ extends Resource
 @export var name: StringName
 @export var cost: int = 1
 
-
 func is_valid(_actor: Actor) -> bool:
     return true
-
 
 ## Override in subclasses
 func describe() -> String:
@@ -203,7 +187,6 @@ class_name MoveAction
 extends Action
 
 @export var target_cell: Vector2i
-
 
 func is_valid(actor: Actor) -> bool:
     return Battlefield.is_cell_walkable(target_cell)
@@ -219,7 +202,6 @@ extends Action
 @export var damage: int = 5
 @export var hit_chance: float = 0.85
 
-
 func is_valid(_actor: Actor) -> bool:
     return target != null and target.is_alive()
 ```
@@ -231,7 +213,6 @@ func is_valid(_actor: Actor) -> bool:
 ```gdscript
 class_name ActionResolver
 extends RefCounted
-
 
 func resolve(action: Action, actor: Actor) -> void:
     if action is MoveAction:
@@ -257,11 +238,9 @@ extends Node
 var _seed: int = 0
 var _streams: Dictionary[StringName, RandomNumberGenerator] = {}
 
-
 func seed_run(s: int) -> void:
     _seed = s
     _streams.clear()
-
 
 func stream(name: StringName) -> RandomNumberGenerator:
     if not _streams.has(name):
@@ -302,7 +281,6 @@ signal phase_changed(p: Phase)
 
 var phase: Phase = Phase.PLACEMENT
 
-
 func advance_phase() -> void:
     phase = (phase + 1) % Phase.size() as Phase
     phase_changed.emit(phase)
@@ -320,18 +298,14 @@ const CELL_SIZE := Vector2(64, 64)
 
 static var instance: Battlefield
 
-
 func _enter_tree() -> void:
     instance = self
-
 
 static func cell_to_world(cell: Vector2i) -> Vector2:
     return Vector2(cell) * CELL_SIZE + CELL_SIZE / 2.0
 
-
 static func world_to_cell(world: Vector2) -> Vector2i:
     return Vector2i((world / CELL_SIZE).floor())
-
 
 static func is_cell_walkable(cell: Vector2i) -> bool:
     # check tilemap, occupied actors, etc.

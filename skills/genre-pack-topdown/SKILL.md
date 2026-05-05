@@ -4,8 +4,6 @@ description: Top-down 2D pack — 8-direction movement, snap-to-grid optional, A
 allowed-tools: Read, Write, Edit
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Genre Pack: Top-Down 2D
 
 Movement, AI, aiming, and camera for top-down 2D games.
@@ -22,11 +20,9 @@ extends Node
 
 var body: CharacterBody2D
 
-
 func _ready() -> void:
     body = get_parent() as CharacterBody2D
     assert(body, "TopDownMoveComponent parent must be CharacterBody2D")
-
 
 func physics_step(delta: float, input_dir: Vector2) -> void:
     if input_dir.length_squared() > 0.01:
@@ -58,10 +54,8 @@ var body: Node2D
 var _tween: Tween
 var is_moving: bool = false
 
-
 func _ready() -> void:
     body = get_parent() as Node2D
-
 
 func step(direction: Vector2i) -> bool:
     if is_moving or direction == Vector2i.ZERO:
@@ -76,7 +70,6 @@ func step(direction: Vector2i) -> bool:
     _tween.tween_property(body, "position", target, move_duration)
     _tween.finished.connect(func() -> void: is_moving = false)
     return true
-
 
 func _is_blocked(_target: Vector2) -> bool:
     # check tilemap or other obstacles
@@ -117,7 +110,6 @@ extends Node2D
 
 var _astar := AStarGrid2D.new()
 
-
 func _ready() -> void:
     if not tilemap:
         return
@@ -132,7 +124,6 @@ func _ready() -> void:
             var data := tilemap.get_cell_tile_data(coord)
             if data and data.get_custom_data("is_solid"):
                 _astar.set_point_solid(coord, true)
-
 
 func find_path(from: Vector2, to: Vector2) -> PackedVector2Array:
     var from_cell := tilemap.local_to_map(tilemap.to_local(from))
@@ -155,7 +146,6 @@ extends CharacterBody2D
 @onready var _move: TopDownMoveComponent = $TopDownMoveComponent
 
 @export var target: Node2D
-
 
 func _physics_process(delta: float) -> void:
     if not target:
@@ -180,7 +170,6 @@ extends Camera2D
 @export var smoothing: float = 8.0
 @export var aim_offset_factor: float = 0.3   ## camera leans toward aim direction
 @export var max_offset: float = 80.0
-
 
 func _physics_process(delta: float) -> void:
     if not target:

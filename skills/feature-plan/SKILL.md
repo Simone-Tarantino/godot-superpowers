@@ -1,6 +1,6 @@
 ---
 name: feature-plan
-description: "Convert an approved feature spec into a milestone-based technical implementation plan at `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`. Maps the spec to concrete files (create / edit / delete), worker decomposition, and regression tests. Required before `orchestrator` dispatch on existing-game features. Run AFTER `feature-spec`."
+description: "Convert an approved feature spec into a milestone-based technical implementation plan at `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md`. Maps the spec to concrete files (create / edit / delete), worker decomposition, and regression tests. Recommended before `orchestrator` dispatch on existing-game features (soft-gate, opt-out via `/skip-design`). Run AFTER `feature-spec`."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: <path-to-feature-spec>
 ---
@@ -9,9 +9,9 @@ argument-hint: <path-to-feature-spec>
 
 Converts an approved feature spec into an actionable, milestone-based implementation plan that uses the godot-superpowers skill catalog as building blocks. Counterpart of `writing-game-plan` for **changes on top of existing code**.
 
-<HARD-GATE>
-You MUST NOT invoke any implementation skill (`bootstrap-godot-project`, `create-*`, `setup-*`, `genre-pack-*`, `shader-writer`, `sfx-generator`, `export-config`) until the plan produced by this skill has been written to `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md` and explicitly approved by the user. The orchestrator agent enforces the same precondition.
-</HARD-GATE>
+<SOFT-GATE>
+By default, do not invoke implementation skills (`bootstrap-godot-project`, `create-*`, `setup-*`, `genre-pack-*`, `shader-writer`, `sfx-generator`, `export-config`) until the plan produced by this skill has been written to `docs/plans/<YYYY-MM-DD>-<slug>-feature-plan.md` and explicitly approved by the user. Opt-out: the user may bypass with `/skip-design` — warn once that the plan exists to catch regression-risk before code, get a confirmation, then proceed. The orchestrator agent applies the same soft-gate (refuses to dispatch unless either the plan is approved or the user explicitly waives it for the session).
+</SOFT-GATE>
 
 ## When to invoke
 

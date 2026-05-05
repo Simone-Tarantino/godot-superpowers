@@ -1,6 +1,6 @@
 ---
 name: feature-spec
-description: "Write a feature specification at `docs/features/<YYYY-MM-DD>-<slug>-feature.md` for a single bounded feature on an existing Godot project. Use AFTER `codebase-survey` and BEFORE `feature-plan`. Hard-gates implementation skills. NOT for greenfield design (use `gdd-writer`) and NOT for technical decomposition (use `feature-plan`)."
+description: "Write a feature specification at `docs/features/<YYYY-MM-DD>-<slug>-feature.md` for a single bounded feature on an existing Godot project. Use AFTER `codebase-survey` and BEFORE `feature-plan`. Soft-gates implementation skills (opt-out via `/skip-design`). NOT for greenfield design (use `gdd-writer`) and NOT for technical decomposition (use `feature-plan`)."
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: <slug> | section
 ---
@@ -9,9 +9,9 @@ argument-hint: <slug> | section
 
 Surgical design document for **one bounded feature** added to an **existing** game. Lives between the GDD (whole game) and the plan (technical decomposition).
 
-<HARD-GATE>
-You MUST NOT invoke any implementation skill (`bootstrap-godot-project`, `create-*`, `setup-*`, `genre-pack-*`, `shader-writer`, `sfx-generator`, `export-config`) until BOTH a feature spec AND a feature plan exist for the feature, and the user has explicitly approved them. The feature plan is produced by the `feature-plan` skill that runs after this one.
-</HARD-GATE>
+<SOFT-GATE>
+By default, do not invoke implementation skills (`bootstrap-godot-project`, `create-*`, `setup-*`, `genre-pack-*`, `shader-writer`, `sfx-generator`, `export-config`) until BOTH a feature spec AND a feature plan exist for the feature, and the user has explicitly approved them. The feature plan is produced by the `feature-plan` skill that runs after this one. Opt-out: the user may bypass with `/skip-design` — warn once that bounded features still benefit from a 5-minute spec to catch regression-risk before code, get a confirmation, then proceed.
+</SOFT-GATE>
 
 ## When to invoke
 

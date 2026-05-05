@@ -3,8 +3,6 @@ name: subagent-dev-mode
 description: "Activate subagentic development mode for milestone execution: an orchestrator agent decomposes work into parallel workers, each write is verified externally by file-verifier, and main-context tokens are kept minimal. Use when the user asks to implement a milestone, build a multi-file feature, or says 'subagent mode' / 'orchestrator mode'."
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Subagent dev mode
 
 A workflow that turns Claude into a thin coordinator: real work happens in subagents with isolated context. Main context stays small; correctness is double-checked by an external verifier.

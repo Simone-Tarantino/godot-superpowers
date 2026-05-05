@@ -4,8 +4,6 @@ description: Audit a Godot 4.x project for common performance pitfalls — repea
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Performance Audit
 
 Static-analysis-style scan plus runtime suggestions. Run this when frame rate drops, before a milestone, or when adding many entities at once.

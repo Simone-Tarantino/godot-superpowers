@@ -4,8 +4,6 @@ description: 3D action / 3rd-person pack — SpringArm camera rig, mouse + gamep
 allowed-tools: Read, Write, Edit
 ---
 
-> **Authoritative source**: query the `godot-docs` MCP server before emitting any Godot 4.x API in code or examples — class names, method signatures, signal payloads, and feature availability change between minor versions. Pre-trained knowledge drifts; the MCP does not. If `godot-docs` MCP is unavailable, link the equivalent page on https://docs.godotengine.org/en/stable/ instead of guessing. (See the `using-godot-superpowers` skill for the full rule.)
-
 # Genre Pack: 3D Action
 
 3rd-person 3D action pack. Camera rig + character controller + lock-on system.
@@ -42,10 +40,8 @@ extends Node3D
 @export var pitch_max_deg: float = 70.0
 @export var invert_y: bool = false
 
-
 func _ready() -> void:
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-
 
 func _physics_process(delta: float) -> void:
     if target:
@@ -55,7 +51,6 @@ func _physics_process(delta: float) -> void:
         rotation.y -= stick.x * stick_sensitivity * delta
         rotation.x += stick.y * stick_sensitivity * delta * (1.0 if invert_y else -1.0)
         rotation.x = clampf(rotation.x, deg_to_rad(pitch_min_deg), deg_to_rad(pitch_max_deg))
-
 
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -83,10 +78,8 @@ extends Node
 
 var body: CharacterBody3D
 
-
 func _ready() -> void:
     body = get_parent() as CharacterBody3D
-
 
 func physics_step(delta: float, input_dir_world: Vector3, jump_pressed: bool) -> void:
     body.velocity.y -= gravity * delta
@@ -113,7 +106,6 @@ extends CharacterBody3D
 
 @onready var _move: CharacterMove3D = $CharacterMove3D
 @onready var _camera_rig: CameraRig3D = get_tree().get_first_node_in_group("camera_rig")
-
 
 func _physics_process(delta: float) -> void:
     var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -152,7 +144,6 @@ signal target_changed(new_target: Node3D)
 
 var current_target: Node3D
 
-
 # Use _unhandled_input so UI captures take precedence over gameplay actions.
 func _unhandled_input(event: InputEvent) -> void:
     if event.is_action_pressed("lock_on"):
@@ -161,11 +152,9 @@ func _unhandled_input(event: InputEvent) -> void:
         else:
             _set_target(_find_best_target())
 
-
 func _set_target(t: Node3D) -> void:
     current_target = t
     target_changed.emit(t)
-
 
 func _find_best_target() -> Node3D:
     var candidates := get_tree().get_nodes_in_group("lockon_targets")
@@ -191,7 +180,6 @@ func _find_best_target() -> Node3D:
             best_score = score
             best = node
     return best
-
 
 func _physics_process(_delta: float) -> void:
     # rotate camera and player toward target
@@ -222,10 +210,8 @@ var _dir: Vector3
 var _is_rolling: bool = false
 var body: CharacterBody3D
 
-
 func _ready() -> void:
     body = get_parent() as CharacterBody3D
-
 
 func _physics_process(delta: float) -> void:
     _cd = maxf(0.0, _cd - delta)
@@ -240,7 +226,6 @@ func _physics_process(delta: float) -> void:
             _is_rolling = false
             if hp:
                 hp.invulnerable = false
-
 
 func try_roll(dir: Vector3) -> bool:
     if _is_rolling or _cd > 0.0 or dir.length_squared() < 0.04:
