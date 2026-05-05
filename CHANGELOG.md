@@ -3,6 +3,21 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.11.0] — 2026-05-05
+
+### Added
+- **Meshy MCP server bundled at tier 3** (`@meshy-ai/meshy-mcp-server`). Provides 3D model generation: text-to-3D, image-to-3D, multi-image-to-3D, retexture, remesh, rigging, animation. Used by the `art-director` agent for 3D-asset scaffolding. Server stanza ships in `.mcp.json` with `MESHY_API_KEY` declared as an environment passthrough — the user only has to export the key in their shell and append `"meshy"` to `enabledMcpjsonServers` in `settings.local.json` to opt in. Key obtainable at https://www.meshy.ai/api.
+
+### Changed
+- **README "MCP servers" section** now distinguishes two tier-3 sub-cases:
+  - **Bundled, needs API key** (`meshy`) — stanza ships in `.mcp.json`, user supplies env var.
+  - **External, BYO config** (`elevenlabs`, `pixellab`, `comfyui`) — stanza NOT shipped because the package/key/self-hosted backend varies per user.
+- **`mcp-meta.json`** schema extended: each server entry may now carry an optional `credential` block (`env`, `required`, `where_to_get`) and a `note` field documenting bundling rationale. Added the corresponding entry for `meshy`.
+- **`settings.local.json.example`** comment updated to mention the new tier-3 opt-in flow.
+
+### Why
+- The `art-director` agent previously had no first-party route to generate placeholder 3D meshes — projects that needed a 3D character or prop fell back to manual asset hunting or hand-modeling. Meshy AI's API covers the full text/image-to-3D + remesh + rig pipeline, and its MCP server has a canonical npm package, so bundling it is low-risk. Tier 3 is the right slot: it's optional, requires user-supplied credentials, and downstream skills must still gracefully degrade when the server is absent.
+
 ## [1.10.0] — 2026-05-05
 
 ### Added

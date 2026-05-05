@@ -26,7 +26,7 @@ cp -R agents skills hooks scripts settings.json .mcp.json "$TARGET"/
 cp settings.local.json.example "$TARGET"/settings.local.json
 ```
 
-Note: `settings.local.json` itself is **gitignored** in this repo (per-user state). The tracked template is `settings.local.json.example` — copy it into the target as `settings.local.json` and edit if needed. The default template enables only the **tier 1 (essential)** MCP servers via an explicit `enabledMcpjsonServers` whitelist (`godot-mcp`, `godot-docs`, `context7`); tier 2 servers (`git`, `memory`) are opt-in — append them to the whitelist to enable. Without a `settings.local.json`, `.mcp.json` is declarative-only and no server starts.
+Note: `settings.local.json` itself is **gitignored** in this repo (per-user state). The tracked template is `settings.local.json.example` — copy it into the target as `settings.local.json` and edit if needed. The default template enables only the **tier 1 (essential)** MCP servers via an explicit `enabledMcpjsonServers` whitelist (`godot-mcp`, `godot-docs`, `context7`); tier 2 servers (`git`, `memory`) are opt-in — append them to the whitelist to enable. Tier 3 server `meshy` is bundled but requires the user to export `MESHY_API_KEY` in their shell (see "MCP servers" below for the full opt-in flow). Without a `settings.local.json`, `.mcp.json` is declarative-only and no server starts.
 
 ## What you get
 
@@ -106,10 +106,18 @@ Note: `settings.local.json` itself is **gitignored** in this repo (per-user stat
 | `godot-docs` | tier 1 (essential) | yes | Inline doc lookup |
 | `context7` | tier 1 (essential) | yes | Library docs |
 | `git`, `memory` | tier 2 (recommended) | yes | Version control + persistent memory |
+| `meshy` | tier 3 (bundled, needs API key) | yes | 3D model generation (text/image-to-3D, retexture, remesh, rig, animate) — used by `art-director` for 3D-asset scaffolding |
 | `elevenlabs` | tier 3 (external) | **no** | Audio generation — referenced by `sound-designer` / `sfx-generator` if installed |
 | `pixellab`, `comfyui` | tier 3 (external) | **no** | Image generation — referenced by `art-director` if installed |
 
-**Tier 3 servers are optional external integrations.** They are NOT shipped in `.mcp.json` because their npm packages, API keys, and self-hosted backends vary per user. To enable them, add the server stanza to your project's `.mcp.json` (or to `~/.claude.json` globally) and provide the relevant credentials. The `sound-designer` and `art-director` agents detect availability at runtime and fall back to placeholders / free CC0 sources when the MCP is absent.
+**Tier 3 splits into two sub-cases:**
+
+- **Bundled, needs API key (`meshy`):** the canonical npm package (`@meshy-ai/meshy-mcp-server`) is stable, so the server stanza ships in `.mcp.json` with `MESHY_API_KEY` declared as an environment passthrough. To opt in:
+  1. Get a key at https://www.meshy.ai/api.
+  2. Export it before launching Claude Code: `export MESHY_API_KEY=msy_...`.
+  3. Append `"meshy"` to `enabledMcpjsonServers` in `settings.local.json`.
+  Without the env var the `npx` invocation still runs but the server fails fast at the first API call — so leaving it out of the whitelist is the safer default.
+- **External, BYO config (`elevenlabs`, `pixellab`, `comfyui`):** packages, keys, and self-hosted backends vary per user, so the server stanza is **not** shipped in `.mcp.json`. To enable, add the stanza to your project's `.mcp.json` (or to `~/.claude.json` globally) and provide the relevant credentials. The `sound-designer` and `art-director` agents detect availability at runtime and fall back to placeholders / free CC0 sources when the MCP is absent.
 
 #### Version pinning policy
 

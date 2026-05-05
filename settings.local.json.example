@@ -1,5 +1,5 @@
 {
-  "_comment": "Tier 1 (essential) MCP servers enabled by default. To enable tier 2 (git, memory), append their names to enabledMcpjsonServers.",
+  "_comment": "Tier 1 (essential) MCP servers enabled by default. To enable tier 2 (git, memory) or tier 3 (meshy — requires MESHY_API_KEY env var), append their names to enabledMcpjsonServers.",
   "enabledMcpjsonServers": [
     "godot-mcp",
     "godot-docs",

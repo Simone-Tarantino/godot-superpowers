@@ -25,6 +25,16 @@
     "memory": {
       "tier": 2,
       "purpose": "Persistent cross-session memory — recommended for the orchestrator agent to retain milestone state"
+    },
+    "meshy": {
+      "tier": 3,
+      "purpose": "Meshy AI 3D model generation: text-to-3D, image-to-3D, multi-image-to-3D, retexture, remesh, rigging, animation. Used by `art-director` for 3D-asset scaffolding when the project needs placeholder meshes.",
+      "credential": {
+        "env": "MESHY_API_KEY",
+        "required": true,
+        "where_to_get": "https://www.meshy.ai/api"
+      },
+      "note": "Bundled in `.mcp.json` because the package (`@meshy-ai/meshy-mcp-server`) is canonical and stable. Server only starts if `MESHY_API_KEY` is exported in the user's shell environment; otherwise the `npx` invocation runs with an empty key and the server fails fast at the first API call. Add to `enabledMcpjsonServers` in `settings.local.json` to opt in."
     }
   }
 }

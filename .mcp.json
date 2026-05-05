@@ -19,6 +19,13 @@
     "memory": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "meshy": {
+      "command": "npx",
+      "args": ["-y", "@meshy-ai/meshy-mcp-server"],
+      "env": {
+        "MESHY_API_KEY": "${MESHY_API_KEY}"
+      }
     }
   }
 }
