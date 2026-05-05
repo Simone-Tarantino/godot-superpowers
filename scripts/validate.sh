@@ -172,6 +172,46 @@ if [ "$fail" = "$drift_before" ]; then
     echo "  OK  CLAUDE.md / README.md / marketplace.json claim $real_skills skills + $real_agents subagents"
 fi
 
+echo "== Plugin manifest skills array (loader registration parity) =="
+# The Claude Code plugin loader expects `skills` to be an array of individual
+# skill paths (e.g. "./skills/foo"). Pre-v1.12.2 shipped a string ("./skills/")
+# which the loader silently dropped, registering ZERO skills despite 33 SKILL.md
+# files on disk. v1.12.2 attempted to omit the field entirely (no auto-discovery
+# for skills, only for agents/hooks/.mcp.json). Fixed in v1.12.3 by declaring
+# the explicit array. Validator now enforces 1:1 parity between manifest array
+# entries and on-disk skill directories.
+manifest=".claude-plugin/plugin.json"
+manifest_skills_count=$(jq -r '(.skills // []) | length' "$manifest" 2>/dev/null)
+manifest_skills_type=$(jq -r '.skills | type' "$manifest" 2>/dev/null)
+if [ "$manifest_skills_type" != "array" ]; then
+    echo "  FAIL $manifest: \`skills\` must be an array of paths, got: $manifest_skills_type. The loader silently drops non-array values, registering 0 skills."
+    fail=1
+elif [ "$manifest_skills_count" != "$real_skills" ]; then
+    echo "  FAIL $manifest: \`skills\` array has $manifest_skills_count entries, but $real_skills SKILL.md files exist on disk. Every skills/<name>/ directory must be listed in the array, or the loader will not register it."
+    fail=1
+else
+    # Verify each entry corresponds to a real directory and vice versa.
+    parity_drift=0
+    while IFS= read -r entry; do
+        dir="${entry#./}"
+        if [ ! -f "$dir/SKILL.md" ]; then
+            echo "  FAIL $manifest: \`skills\` entry \"$entry\" has no matching $dir/SKILL.md on disk."
+            fail=1
+            parity_drift=1
+        fi
+    done < <(jq -r '.skills[]' "$manifest")
+    for d in skills/*/; do
+        name="${d%/}"
+        name="${name#skills/}"
+        if ! jq -e --arg p "./skills/$name" '.skills | index($p)' "$manifest" >/dev/null; then
+            echo "  FAIL $manifest: skills/$name/ exists on disk but is not listed in the \`skills\` array — loader will skip it."
+            fail=1
+            parity_drift=1
+        fi
+    done
+    [ "$parity_drift" -eq 0 ] && echo "  OK  manifest \`skills\` array (length $manifest_skills_count) matches skills/ directory contents 1:1"
+fi
+
 echo "== Hook reminder wording drift =="
 # Live docs (not CHANGELOG) must reference the current hook output wording.
 # Real hook prints: "verifier: dispatch file-verifier on <N> file(s) [<paths>]"

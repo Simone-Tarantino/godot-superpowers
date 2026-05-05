@@ -1,7 +1,7 @@
 {
   "name": "godot-superpowers",
   "description": "Full-spectrum Godot 4.x game development toolkit for Claude Code: skills, subagents, hooks, and MCP integration covering scaffolding, components, state machines, save systems, collision layers, GUT tests, shaders, audio, export pipelines, and genre packs (platformer, top-down, 3D action, turn-based).",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "author": {
     "name": "Simone Tarantino",
     "url": "https://github.com/Simone-Tarantino"
@@ -9,5 +9,46 @@
   "license": "MIT",
   "homepage": "https://github.com/Simone-Tarantino/godot-superpowers",
   "repository": "https://github.com/Simone-Tarantino/godot-superpowers",
-  "keywords": ["godot", "godot4", "gdscript", "gamedev", "game-development"]
+  "keywords": [
+    "godot",
+    "godot4",
+    "gdscript",
+    "gamedev",
+    "game-development"
+  ],
+  "skills": [
+    "./skills/bootstrap-godot-project",
+    "./skills/codebase-survey",
+    "./skills/create-autoload",
+    "./skills/create-component",
+    "./skills/create-resource",
+    "./skills/create-scene",
+    "./skills/create-state-machine",
+    "./skills/export-config",
+    "./skills/feature-plan",
+    "./skills/feature-spec",
+    "./skills/game-brainstorming",
+    "./skills/gdd-writer",
+    "./skills/genre-pack-3d-action",
+    "./skills/genre-pack-platformer",
+    "./skills/genre-pack-topdown",
+    "./skills/genre-pack-turnbased",
+    "./skills/godot-patterns",
+    "./skills/gut-test-writer",
+    "./skills/networking-foundation",
+    "./skills/performance-audit",
+    "./skills/save-schema-migration",
+    "./skills/setup-collision-layers",
+    "./skills/setup-git-godot",
+    "./skills/setup-input-map",
+    "./skills/setup-localization",
+    "./skills/setup-save-system",
+    "./skills/sfx-generator",
+    "./skills/shader-writer",
+    "./skills/subagent-dev-mode",
+    "./skills/ui-patterns-godot",
+    "./skills/update-docs",
+    "./skills/using-godot-superpowers",
+    "./skills/writing-game-plan"
+  ]
 }

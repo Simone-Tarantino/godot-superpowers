@@ -3,6 +3,16 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.12.3] — 2026-05-05
+
+### Fixed
+- **Plugin manifest: `skills` MUST be declared as an explicit array of paths.** v1.12.2 attempted to fix the zero-skill bug by removing the `skills` and `mcpServers` fields entirely, on the (incorrect) assumption that all four resource types (`skills/`, `agents/`, `hooks/hooks.json`, `.mcp.json`) were auto-discovered by Claude Code's plugin loader. Empirically false: `agents/`, `hooks/hooks.json`, and `.mcp.json` ARE auto-discovered (a fresh `/reload-plugins` reported `20 agents · 10 hooks · 5 plugin MCP servers`), but `skills/` is **not** — the loader requires `skills` to be an explicit array of individual skill paths in the manifest, matching the `andrej-karpathy-skills` pattern (`"skills": ["./skills/karpathy-guidelines"]`). v1.12.2 with the field omitted reproduced the same `0 skills` outcome as pre-v1.12.2 with the field as a string. v1.12.3 declares the field as a 33-entry array enumerating every `./skills/<name>` path explicitly.
+- **Validator now enforces array-of-paths parity.** `scripts/validate.sh` adds a new `Plugin manifest skills array (loader registration parity)` check that (a) confirms `skills` is an array (not a string, not absent), (b) confirms its length equals the on-disk SKILL.md count, and (c) verifies 1:1 parity between every array entry and every `skills/<name>/` directory. This blocks both regressions: silent string fallback and adding a new skill directory without updating the manifest array.
+
+### Why
+- v1.12.2's reasoning was wrong by analogy: the working examples surveyed (`superpowers`, `vercel`, `ralph-loop`, `caveman`) were all plugins that ship **zero** custom skills (skills loaded via the global `superpowers` plugin or via none at all). They omit `skills` because they have nothing to declare, not because the field auto-discovers. The only surveyed plugin that actually ships skills (`andrej-karpathy-skills`) declared them as an explicit array — that was the correct signal, missed.
+- The new validator check forces every future skill addition through a manifest update, eliminating the "33 directories on disk, 0 registered with loader" failure class entirely.
+
 ## [1.12.2] — 2026-05-05
 
 ### Fixed
