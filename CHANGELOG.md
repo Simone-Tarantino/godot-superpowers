@@ -3,6 +3,15 @@
 All notable changes to **godot-superpowers** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [1.12.2] — 2026-05-05
+
+### Fixed
+- **Plugin manifest: skills + mcpServers fields removed (zero-skill bug).** `.claude-plugin/plugin.json` previously declared `"skills": "./skills/"` and `"mcpServers": "./.mcp.json"` as **strings**. The Claude Code plugin loader expects `skills` to be an **array of individual skill paths** (see `andrej-karpathy-skills`: `"skills": ["./skills/karpathy-guidelines"]`); a string value is silently dropped on load. Result: every install of v1.1.0 through v1.12.1 reported `Reloaded: 4 plugins · 0 skills` for godot-superpowers — the plugin appeared installed but registered zero skills, leaving end users with only what hooks/agents/MCP discovered separately. Fixed by removing both fields entirely and relying on auto-discovery (the same pattern `superpowers`, `vercel`, `ralph-loop`, and `caveman` use — none of those manifests carry `skills` or `mcpServers` fields). The `skills/` directory and `.mcp.json` are now picked up by convention.
+
+### Why
+- This is the most consequential bug the plugin has shipped: every "33 skills" claim in README / CLAUDE.md / marketplace description was technically correct on disk but functionally false at runtime, because the loader registered none of them. Anyone who installed pre-v1.12.2 saw the dispatcher and design gates not auto-loading on `.gd` / `.tscn` files (their `paths` glob never registered with the matcher), genre packs absent from `/skills`, and create-* skills unreachable. The plugin was effectively a 33-file documentation set rather than an active skill catalog.
+- Detection failure: the validator (`scripts/validate.sh`) parsed `plugin.json` with `jq` (well-formed JSON), counted skill directories on disk (33 found), and reported PASS — it never simulated what the loader would actually register, so the schema mismatch went undetected for 12 minor versions.
+
 ## [1.12.1] — 2026-05-05
 
 ### Fixed
